@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>🛒 Giỏ Hàng</h1>
+
+{% if cart_items %}
+    <table class="mt-2">
+        <thead>
+            <tr>
+                <th>Sản Phẩm</th>
+                <th>Giá</th>
+                <th>Số Lượng</th>
+                <th>Thành Tiền</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+                <tr>
+                    <td><strong>{{ item.product.name }}</strong></td>
+                    <td>{{ "{:,.0f}".format(item.product.price) }} ₫</td>
+                    <td>{{ item.quantity }}</td>
+                    <td><strong>{{ "{:,.0f}".format(item.product.price * item.quantity) }} ₫</strong></td>
+                    <td>
+                        <form method="POST" action="/remove-from-cart/{{ item.id }}" style="display: inline;">
+                            <button type="submit" class="btn-danger" onclick="return confirm('Bạn chắc chắn muốn xóa?')">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="text-align: right; margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 8px;">
+        <h2 style="margin-bottom: 1rem;">Tổng Cộng: <span style="color: #667eea;">{{ "{:,.0f}".format(total_price) }} ₫</span></h2>
+        <a href="/" class="btn-secondary">← Tiếp Tục Mua Hàng</a>
+        <a href="/checkout" class="btn-primary" style="margin-left: 1rem;">Thanh Toán →</a>
+    </div>
+{% else %}
+    <div class="alert alert-info text-center" style="margin-top: 2rem;">
+        <h3>Giỏ hàng trống</h3>
+        <p>Hãy quay lại <a href="/">trang chủ</a> để mua sắm</p>
+    </div>
+{% endif %}
+{% endblock %}

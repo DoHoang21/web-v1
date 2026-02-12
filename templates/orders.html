@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>📋 Đơn Hàng Của Tôi</h1>
+
+{% if orders %}
+    <table class="mt-2">
+        <thead>
+            <tr>
+                <th>Đơn Hàng</th>
+                <th>Tổng Tiền</th>
+                <th>Trạng Thái</th>
+                <th>Ngày Đặt</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td><strong>#{{ order.id }}</strong></td>
+                    <td>{{ "{:,.0f}".format(order.total_price) }} ₫</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                            <span style="background: #fff3cd; color: #856404; padding: 0.3rem 0.8rem; border-radius: 20px;">⏳ Chờ Xác Nhận</span>
+                        {% elif order.status == 'paid' %}
+                            <span style="background: #cfe2ff; color: #084298; padding: 0.3rem 0.8rem; border-radius: 20px;">✓ Đã Thanh Toán</span>
+                        {% elif order.status == 'shipped' %}
+                            <span style="background: #d1ecf1; color: #0c5460; padding: 0.3rem 0.8rem; border-radius: 20px;">📦 Đang Gửi</span>
+                        {% elif order.status == 'delivered' %}
+                            <span style="background: #d4edda; color: #155724; padding: 0.3rem 0.8rem; border-radius: 20px;">✓ Đã Giao</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <a href="/order-success/{{ order.id }}" class="btn-secondary">Chi Tiết</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="alert alert-info text-center" style="margin-top: 2rem;">
+        <h3>Chưa có đơn hàng nào</h3>
+        <p>Hãy quay lại <a href="/">trang chủ</a> để mua sắm</p>
+    </div>
+{% endif %}
+{% endblock %}

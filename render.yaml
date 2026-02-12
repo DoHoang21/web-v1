@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: tech-store
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfile: Dockerfile
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: techstore-db
+    dockerCommand: python app.py
+
+  - type: pserv
+    name: techstore-db
+    runtime: python
+    plan: starter
+    dbName: techstore
+    user: postgres
