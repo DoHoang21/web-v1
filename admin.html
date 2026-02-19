@@ -1,0 +1,262 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>👨‍💼 Trang Quản Trị</h1>
+
+<div style="margin-top: 2rem;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="margin-bottom: 20px;">
+                {% for category, message in messages %}
+                    {% if category == 'success' %}
+                        <div style="padding: 15px; border-radius: 4px; font-weight: bold; color: white; margin-bottom: 10px; background-color: #4CAF50;">
+                            {{ message }}
+                        </div>
+                    {% else %}
+                        <div style="padding: 15px; border-radius: 4px; font-weight: bold; color: white; margin-bottom: 10px; background-color: #f44336;">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div style="display: flex; gap: 1rem; border-bottom: 2px solid #e0e0e0; margin-bottom: 2rem;">
+        <button id="btn-products" class="tab-btn" data-tab="products" style="background: #667eea; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 5px 5px 0 0; cursor: pointer;">📦 Sản Phẩm</button>
+        <button id="btn-orders" class="tab-btn" data-tab="orders" style="background: transparent; color: #666; padding: 0.8rem 1.5rem; border: none; cursor: pointer;">📋 Đơn Hàng</button>
+        <button id="btn-users" class="tab-btn" data-tab="users" style="background: transparent; color: #666; padding: 0.8rem 1.5rem; border: none; cursor: pointer;">👥 Người Dùng</button>
+    </div>
+
+    <div id="products-tab" class="tab-content">
+        <h2 style="margin-bottom: 1.5rem;">Quản Lý Sản Phẩm</h2>
+        
+        <div style="background: white; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3>➕ Thêm Sản Phẩm Mới</h3>
+            <form method="POST" action="{{ url_for('admin_add_product') }}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="name">Tên Sản Phẩm:</label>
+                    <input type="text" id="name" name="name" style="width: 100%; padding: 0.5rem;" required>
+                </div>
+                <div class="form-group">
+                    <label for="price">Giá (₫):</label>
+                    <input type="number" id="price" name="price" step="0.01" style="width: 100%; padding: 0.5rem;" required>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="description">Mô Tả:</label>
+                    <textarea id="description" name="description" style="width: 100%; padding: 0.5rem;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Số Lượng:</label>
+                    <input type="number" id="quantity" name="quantity" style="width: 100%; padding: 0.5rem;" required>
+                </div>
+                <div class="form-group">
+                    <label for="image_url">URL Ảnh:</label>
+                    <input type="text" id="image_url" name="image_url" style="width: 100%; padding: 0.5rem;">
+                </div>
+                <button type="submit" class="btn-primary" style="grid-column: 1 / -1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Thêm Sản Phẩm</button>
+            </form>
+        </div>
+
+        {% if products %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f1f1f1; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">ID</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Tên</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Giá</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Số Lượng</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ product.id }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ product.name }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ "{:,.0f}".format(product.price or 0) }} ₫</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ product.quantity }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                                <button class="btn-secondary edit-product-btn" data-product-id="{{ product.id }}" style="padding: 5px 10px; cursor: pointer;">Sửa</button>
+                                <button class="btn-danger delete-product-btn" data-product-id="{{ product.id }}" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">Xóa</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <div id="orders-tab" class="tab-content" style="display: none;">
+        <h2 style="margin-bottom: 1.5rem;">Quản Lý Đơn Hàng</h2>
+        
+        {% if orders %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f1f1f1; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">ID</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Khách Hàng</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Tổng Tiền</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Trạng Thái</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Ngày Tạo</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">#{{ order.id }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ order.user.username if order.user else 'N/A' }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ "{:,.0f}".format(order.total_price or 0) }} ₫</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                                <select class="status-select" data-order-id="{{ order.id }}" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd;">
+                                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Chờ Xác Nhận</option>
+                                    <option value="paid" {% if order.status == 'paid' %}selected{% endif %}>Đã Thanh Toán</option>
+                                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Đã Gửi</option>
+                                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Đã Giao</option>
+                                </select>
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                                <button class="btn-secondary view-order-btn" data-order-id="{{ order.id }}">Xem</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <div id="users-tab" class="tab-content" style="display: none;">
+        <h2 style="margin-bottom: 1.5rem;">Quản Lý Người Dùng</h2>
+        
+        {% if users %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f1f1f1; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">ID</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Tên Đăng Nhập</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Email</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Quyền</th>
+                        <th style="padding: 10px; border-bottom: 1px solid #ddd;">Ngày Tạo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ user.id }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ user.username }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ user.email }}</td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                                {% if user.is_admin %}
+                                    <span style="background: #667eea; color: white; padding: 0.3rem 0.8rem; border-radius: 20px;">Admin</span>
+                                {% else %}
+                                    <span style="background: #e0e0e0; color: #666; padding: 0.3rem 0.8rem; border-radius: 20px;">User</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            showTab(tabName);
+        });
+    });
+
+    // Edit product buttons
+    document.querySelectorAll('.edit-product-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            editProduct(productId);
+        });
+    });
+
+    // Delete product buttons
+    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            deleteProduct(productId);
+        });
+    });
+
+    // Status select change
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const orderId = this.getAttribute('data-order-id');
+            const status = this.value;
+            updateOrderStatus(orderId, status);
+        });
+    });
+
+    // View order buttons
+    document.querySelectorAll('.view-order-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            viewOrder(orderId);
+        });
+    });
+});
+
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = '#666';
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    document.getElementById('btn-' + tabName).style.background = '#667eea';
+    document.getElementById('btn-' + tabName).style.color = 'white';
+}
+
+function editProduct(productId) {
+    alert('Chức năng chỉnh sửa sẽ được thêm vào');
+}
+
+function deleteProduct(productId) {
+    if (confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) {
+        fetch(`/admin/delete-product/${productId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+    }
+}
+
+function updateOrderStatus(orderId, status) {
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch(`/admin/update-order-status/${orderId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    });
+}
+
+function viewOrder(orderId) {
+    alert('Chi tiết đơn hàng #' + orderId);
+}
+</script>
+{% endblock %}
