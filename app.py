@@ -1,11 +1,16 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
+import logging
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-2026')
 
 # Database configuration
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///shop.db')
@@ -273,18 +278,61 @@ def admin_add_product():
     if not is_admin:
         return jsonify({'success': False, 'message': 'Không có quyền'}), 403
     
+    # Lấy dữ liệu từ form
     name = request.form.get('name')
     description = request.form.get('description')
-    price = request.form.get('price', type=float)
-    quantity = request.form.get('quantity', type=int)
+    price_str = request.form.get('price')
+    quantity_str = request.form.get('quantity')
     image_url = request.form.get('image_url', '')
     
-    product = Product(name=name, description=description, price=price, 
-                     quantity=quantity, image_url=image_url)
-    db.session.add(product)
-    db.session.commit()
+    # Validate required fields
+    if not name:
+        flash('Tên sản phẩm không được để trống', 'error')
+        return redirect(url_for('admin'))
     
-    return jsonify({'success': True, 'message': 'Thêm sản phẩm thành công'})
+    if not price_str:
+        flash('Giá sản phẩm không được để trống', 'error')
+        return redirect(url_for('admin'))
+    
+    if not quantity_str:
+        flash('Số lượng sản phẩm không được để trống', 'error')
+        return redirect(url_for('admin'))
+    
+    try:
+        price = float(price_str)
+        quantity = int(quantity_str)
+    except (ValueError, TypeError):
+        flash('Giá và số lượng phải là số hợp lệ', 'error')
+        return redirect(url_for('admin'))
+    
+    if price < 0:
+        flash('Giá sản phẩm không được âm', 'error')
+        return redirect(url_for('admin'))
+    
+    if quantity < 0:
+        flash('Số lượng sản phẩm không được âm', 'error')
+        return redirect(url_for('admin'))
+    
+    try:
+        product = Product(
+            name=name, 
+            description=description, 
+            price=price, 
+            quantity=quantity, 
+            image_url=image_url
+        )
+        db.session.add(product)
+        db.session.commit()
+        logger.info(f"Admin added product: {product.name} (id={product.id})")
+        
+        flash('Thêm sản phẩm thành công', 'success')
+        return redirect(url_for('admin'))
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding product: {str(e)}")
+        flash(f'Có lỗi xảy ra khi thêm sản phẩm: {str(e)}', 'error')
+        return redirect(url_for('admin'))
 
 
 @app.route('/admin/edit-product/<int:product_id>', methods=['POST'])
@@ -370,7 +418,34 @@ def init_db():
         db.session.commit()
 
 
+# ==================== ERROR HANDLERS ====================
+
+@app.errorhandler(404)
+def page_not_found(e):
+    logger.warning(f"404 Not Found: {request.path}")
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    logger.error(f"500 Internal Error: {str(e)}")
+    db.session.rollback()
+    return render_template('500.html'), 500
+
+
+@app.before_request
+def before_request():
+    logger.info(f"Request: {request.method} {request.path}")
+
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Response: {response.status}")
+    return response
+
+
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug, host='0.0.0.0', port=port)
