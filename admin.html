@@ -1,0 +1,1315 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+.admin-header {
+    margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.admin-header p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.admin-tab-btn {
+    padding: 0.9rem 1.8rem;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    position: relative;
+    top: 2px;
+}
+
+.admin-tab-btn:hover {
+    color: #333;
+}
+
+.admin-tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.admin-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.admin-section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.add-form-section {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    border: 1px solid #e0e4ff;
+    border-radius: 8px;
+    padding: 1.8rem;
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row.full {
+    grid-column: 1 / -1;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.admin-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.admin-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.admin-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-table tr:hover {
+    background: #fafbff;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-group button {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.status-badge {
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-pending { background: #fff3cd; color: #856404; }
+.status-paid { background: #d1ecf1; color: #0c5460; }
+.status-shipped { background: #d4edda; color: #155724; }
+.status-delivered { background: #cce5ff; color: #004085; }
+
+.quantity-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    color: #333;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.quantity-high { background: #d4edda; }
+.quantity-medium { background: #fff3cd; }
+.quantity-low { background: #f8d7da; }
+
+/* ==================== INVENTORY STYLES ==================== */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.inventory-card {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.inventory-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.inventory-card-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.inventory-card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.inventory-card-unit {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.low-stock-alert {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #f59e0b;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.low-stock-alert h3 {
+    margin: 0 0 0.8rem 0;
+    color: #92400e;
+    font-size: 1rem;
+}
+
+.low-stock-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.low-stock-item {
+    padding: 0.6rem 0;
+    color: #78350f;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.low-stock-item span {
+    background: rgba(245, 158, 11, 0.2);
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #d97706;
+}
+
+.adjustment-form {
+    background: linear-gradient(135deg, #f0f4ff 0%, #f8f9ff 100%);
+    border: 2px solid #e0e4ff;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 5px solid #667eea;
+}
+
+.adjustment-form h3 {
+    margin: 0 0 1.5rem 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+.adjustment-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.adjustment-controls select,
+.adjustment-controls input {
+    padding: 0.8rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.adjustment-controls select:focus,
+.adjustment-controls input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.adjustment-btn {
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.adjustment-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-table {
+        font-size: 0.85rem;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 0.6rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group button {
+        width: 100%;
+    }
+}
+
+/* ==================== REPORTS STYLES ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-3px);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.stat-unit {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.stat-change.positive {
+    color: #10b981;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+.report-section {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid #667eea;
+}
+
+.report-section h3 {
+    margin: 0 0 1rem 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.best-products {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.best-product-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.best-product-item:last-child {
+    border-bottom: none;
+}
+
+.product-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    margin-right: 0.8rem;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-info strong {
+    display: block;
+    color: #1f2937;
+    margin-bottom: 0.3rem;
+}
+
+.product-info small {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.product-sales {
+    text-align: right;
+    font-weight: 600;
+    color: #667eea;
+}
+
+</style>
+
+<div class="admin-header">
+    <h1>👨‍💼 Quản Trị Hệ Thống</h1>
+    <p>Quản lý sản phẩm, đơn hàng và người dùng từ bảng điều khiển này</p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div style="margin-bottom: 2rem;">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {% if category == 'success' %}✓{% else %}⚠️{% endif %} {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="admin-tabs">
+    <button class="admin-tab-btn active" onclick="switchTab('products')">📦 Sản Phẩm</button>
+    <button class="admin-tab-btn" onclick="switchTab('inventory')">🏭 Quản Kho</button>
+    <button class="admin-tab-btn" onclick="switchTab('orders')">📋 Đơn Hàng</button>
+    <button class="admin-tab-btn" onclick="switchTab('users')">👥 Người Dùng</button>
+    <button class="admin-tab-btn" onclick="switchTab('reports')">📊 Báo Cáo</button>
+</div>
+
+<!-- ==================== PRODUCTS TAB ==================== -->
+<div id="products-tab" class="admin-content">
+    <div class="admin-section-title">📦 Quản Lý Sản Phẩm</div>
+    
+    <div class="add-form-section">
+        <h3 style="margin: 0 0 1.5rem 0; color: #333; font-size: 1.05rem;">➕ Thêm Sản Phẩm Mới</h3>
+        <form method="POST" action="{{ url_for('admin_add_product') }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Tên Sản Phẩm</label>
+                    <input type="text" id="name" name="name" placeholder="Nhập tên sản phẩm..." required>
+                </div>
+                <div class="form-group">
+                    <label for="price">Giá (₫)</label>
+                    <input type="number" id="price" name="price" step="0.01" min="0" placeholder="0" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="quantity">Số Lượng</label>
+                    <input type="number" id="quantity" name="quantity" min="0" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="image_url">URL Ảnh</label>
+                    <input type="text" id="image_url" name="image_url" placeholder="https://...">
+                </div>
+            </div>
+            
+            <div class="form-row full">
+                <div class="form-group">
+                    <label for="description">Mô Tả Sản Phẩm</label>
+                    <textarea id="description" name="description" placeholder="Nhập mô tả sản phẩm..."></textarea>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 0.9rem; font-weight: 600;">➕ Thêm Sản Phẩm</button>
+        </form>
+    </div>
+    
+    {% if products %}
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">ID</th>
+                        <th style="width: 25%;">Tên Sản Phẩm</th>
+                        <th style="width: 15%;">Giá</th>
+                        <th style="width: 12%;">Số Lượng</th>
+                        <th style="width: 43%;">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                        <tr>
+                            <td>#{{ product.id }}</td>
+                            <td>
+                                <strong>{{ product.name }}</strong>
+                                <div style="font-size: 0.8rem; color: #999; margin-top: 0.3rem;">
+                                    {{ product.description[:50] }}{% if product.description and product.description|length > 50 %}...{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span style="color: #667eea; font-weight: 600;">{{ "{:,.0f}".format(product.price) }}₫</span>
+                            </td>
+                            <td>
+                                {% if product.quantity > 10 %}
+                                    <span class="quantity-badge quantity-high">{{ product.quantity }}</span>
+                                {% elif product.quantity > 0 %}
+                                    <span class="quantity-badge quantity-medium">{{ product.quantity }}</span>
+                                {% else %}
+                                    <span class="quantity-badge quantity-low">{{ product.quantity }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn-primary" data-product-id="{{ product.id }}" onclick="openEditModal(this.dataset.productId)" style="background: #4CAF50;">✏️ Sửa</button>
+                                    <button class="btn-danger" data-product-id="{{ product.id }}" onclick="deleteProduct(this.dataset.productId)">🗑️ Xóa</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <h3>Chưa có sản phẩm nào</h3>
+            <p>Hãy thêm sản phẩm mới bằng form phía trên</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ==================== INVENTORY TAB ==================== -->
+<div id="inventory-tab" class="admin-content" style="display: none;">
+    <div class="admin-section-title">🏭 Quản Lý Kho Hàng</div>
+    
+    <!-- INVENTORY SUMMARY -->
+    <div class="inventory-grid">
+        <div class="inventory-card">
+            <div class="inventory-card-title">Tổng Sản Phẩm</div>
+            <div class="inventory-card-value">{{ products|length }}</div>
+            <div class="inventory-card-unit">sản phẩm</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Tổng Tồn Kho</div>
+            <div class="inventory-card-value">{{ products|map(attribute='quantity')|sum }}</div>
+            <div class="inventory-card-unit">đơn vị</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Cảnh Báo Hết Hàng</div>
+            <div class="inventory-card-value" style="color: #ef4444;">{{ products|selectattr('quantity', 'lt', 5)|list|length }}</div>
+            <div class="inventory-card-unit">sản phẩm</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Giá Trị Tồn Kho</div>
+            <div class="inventory-card-value" style="color: #10b981;">
+                {% set total_value = 0 %}
+                {% for product in products %}
+                    {% set total_value = total_value + (product.price * product.quantity) %}
+                {% endfor %}
+                {{ "{:,.0f}".format(total_value) }}
+            </div>
+            <div class="inventory-card-unit">₫</div>
+        </div>
+    </div>
+
+    <!-- LOW STOCK ALERTS -->
+    {% set low_stock_products = products|selectattr('quantity', 'lt', 5)|list %}
+    {% if low_stock_products %}
+        <div class="low-stock-alert">
+            <h3>⚠️ Sản Phẩm Sắp Hết</h3>
+            <ul class="low-stock-list">
+                {% for product in low_stock_products %}
+                    <li class="low-stock-item">
+                        <span>{{ product.name }}</span>
+                        <span>{{ product.quantity }} đơn vị</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- INVENTORY ADJUSTMENT -->
+    <div class="adjustment-form">
+        <h3>� Nhập Hàng Mới</h3>
+        <form id="inventoryAdjustmentForm">
+            <div class="adjustment-controls" style="grid-template-columns: 1fr 1fr auto;">
+                <select id="adjustProduct" name="product_id" required>
+                    <option value="">-- Chọn Sản Phẩm --</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" id="adjustQuantity" name="quantity" min="1" placeholder="Số lượng nhập" required>
+                <button type="button" class="adjustment-btn" onclick="submitInventoryAdjustment()">💾 Lưu</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- INVENTORY TABLE -->
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 28%;">Tên Sản Phẩm</th>
+                    <th style="width: 12%;">Giá</th>
+                    <th style="width: 12%;">Tồn Kho</th>
+                    <th style="width: 15%;">Tình Trạng</th>
+                    <th style="width: 25%;">Tổng Giá Trị</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td><strong>#{{ product.id }}</strong></td>
+                        <td>
+                            <strong>{{ product.name }}</strong>
+                            <div style="font-size: 0.8rem; color: #999; margin-top: 0.3rem;">
+                                SKU: PROD-{{ product.id }}
+                            </div>
+                        </td>
+                        <td><span style="color: #667eea; font-weight: 600;">{{ "{:,.0f}".format(product.price) }}₫</span></td>
+                        <td>
+                            <strong style="font-size: 1.1rem;">{{ product.quantity }}</strong>
+                            <div style="font-size: 0.8rem; color: #999;">đơn vị</div>
+                        </td>
+                        <td>
+                            {% if product.quantity >= 20 %}
+                                <span class="quantity-badge quantity-high">✓ Đủ</span>
+                            {% elif product.quantity >= 5 %}
+                                <span class="quantity-badge quantity-medium">⚠️ Vừa</span>
+                            {% elif product.quantity > 0 %}
+                                <span class="quantity-badge quantity-low">⚠️ Ít</span>
+                            {% else %}
+                                <span class="quantity-badge quantity-low">❌ Hết</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: #10b981;">{{ "{:,.0f}".format(product.price * product.quantity) }}₫</strong>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ORDERS TAB ==================== -->
+<div id="orders-tab" class="admin-content" style="display: none;">
+    <div class="admin-section-title">📋 Quản Lý Đơn Hàng</div>
+    
+    {% if orders %}
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">Mã ĐH</th>
+                        <th style="width: 18%;">Khách Hàng</th>
+                        <th style="width: 15%;">Tổng Tiền</th>
+                        <th style="width: 20%;">Trạng Thái</th>
+                        <th style="width: 17%;">Ngày Tạo</th>
+                        <th style="width: 22%;">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td><strong>#{{ order.id }}</strong></td>
+                            <td>{{ order.user.username if order.user else 'N/A' }}</td>
+                            <td>
+                                <span style="color: #667eea; font-weight: 600;">{{ "{:,.0f}".format(order.total_price) }}₫</span>
+                            </td>
+                            <td>
+                                <select class="status-select" data-order-id="{{ order.id }}" onchange="updateOrderStatus(this.dataset.orderId, this.value)" style="padding: 0.6rem; border-radius: 6px; border: 1px solid #ddd; font-weight: 500; cursor: pointer;">
+                                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>⏳ Chờ Xác Nhận</option>
+                                    <option value="paid" {% if order.status == 'paid' %}selected{% endif %}>✓ Đã Thanh Toán</option>
+                                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>📦 Đang Gửi</option>
+                                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>🎁 Đã Giao</option>
+                                </select>
+                            </td>
+                            <td style="font-size: 0.9rem;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}</td>
+                            <td>
+                                <button class="btn-primary" data-order-id="{{ order.id }}" onclick="viewOrder(this.dataset.orderId)" style="padding: 0.6rem 1rem;">👁️ Xem Chi Tiết</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h3>Chưa có đơn hàng nào</h3>
+            <p>Các đơn hàng sẽ xuất hiện ở đây</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ==================== USERS TAB ==================== -->
+<div id="users-tab" class="admin-content" style="display: none;">
+    <div class="admin-section-title">👥 Quản Lý Người Dùng</div>
+    
+    {% if users %}
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">ID</th>
+                        <th style="width: 20%;">Tên Đăng Nhập</th>
+                        <th style="width: 28%;">Email</th>
+                        <th style="width: 15%;">Quyền</th>
+                        <th style="width: 29%;">Ngày Tạo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>#{{ user.id }}</td>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td style="font-size: 0.9rem; color: #666;">{{ user.email }}</td>
+                            <td>
+                                {% if user.is_admin %}
+                                    <span class="status-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">👮 Admin</span>
+                                {% else %}
+                                    <span class="status-badge" style="background: #e8eef7; color: #667eea;">👤 User</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.9rem;">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">👥</div>
+            <h3>Chưa có người dùng nào</h3>
+            <p>Người dùng đăng ký sẽ xuất hiện ở đây</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ==================== REPORTS TAB ==================== -->
+<div id="reports-tab" class="admin-content" style="display: none;">
+    <div class="admin-section-title">📊 Báo Cáo Thống Kê</div>
+    
+    <!-- KEY STATISTICS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Doanh Thu Tổng</div>
+            <div class="stat-value" style="color: #10b981;">
+                {% set total_revenue = orders|map(attribute='total_price')|sum %}
+                {{ "{:,.0f}".format(total_revenue) }}
+            </div>
+            <div class="stat-unit">₫</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Số Đơn Hàng</div>
+            <div class="stat-value">{{ orders|length }}</div>
+            <div class="stat-unit">đơn hàng</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Số Khách Hàng</div>
+            <div class="stat-value">{{ users|length }}</div>
+            <div class="stat-unit">khách</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Tổng Sản Phẩm</div>
+            <div class="stat-value" style="color: #667eea;">{{ products|length }}</div>
+            <div class="stat-unit">sản phẩm</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Đơn Hàng Đã Giao</div>
+            <div class="stat-value" style="color: #3b82f6;">
+                {% set delivered = orders|selectattr('status', 'equalto', 'delivered')|list|length %}
+                {{ delivered }}
+            </div>
+            <div class="stat-unit">đơn</div>
+            <div class="stat-change positive">
+                ✓ {{ "%.1f" % (delivered / orders|length * 100 if orders|length > 0 else 0) }}%
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Tồn Kho Tổng</div>
+            <div class="stat-value" style="color: #f59e0b;">{{ products|map(attribute='quantity')|sum }}</div>
+            <div class="stat-unit">đơn vị</div>
+        </div>
+    </div>
+    
+    <!-- SALES SUMMARY -->
+    <div class="report-section">
+        <h3>💰 Tóm Tắt Doanh Số</h3>
+        <table class="admin-table" style="margin-top: 0;">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Chỉ Số</th>
+                    <th style="width: 35%;">Giá Trị</th>
+                    <th style="width: 35%;">So Với Tất Cả (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Đơn Hàng Chờ Xác Nhận</strong></td>
+                    <td>
+                        {% set pending = orders|selectattr('status', 'equalto', 'pending')|list|length %}
+                        <span style="color: #f59e0b; font-weight: 600;">{{ pending }} đơn</span>
+                    </td>
+                    <td>{{ "%.1f" % (pending / orders|length * 100 if orders|length > 0 else 0) }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>Đơn Hàng Đã Thanh Toán</strong></td>
+                    <td>
+                        {% set paid = orders|selectattr('status', 'equalto', 'paid')|list|length %}
+                        <span style="color: #3b82f6; font-weight: 600;">{{ paid }} đơn</span>
+                    </td>
+                    <td>{{ "%.1f" % (paid / orders|length * 100 if orders|length > 0 else 0) }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>Đơn Hàng Đang Gửi</strong></td>
+                    <td>
+                        {% set shipped = orders|selectattr('status', 'equalto', 'shipped')|list|length %}
+                        <span style="color: #8b5cf6; font-weight: 600;">{{ shipped }} đơn</span>
+                    </td>
+                    <td>{{ "%.1f" % (shipped / orders|length * 100 if orders|length > 0 else 0) }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>Đơn Hàng Đã Giao</strong></td>
+                    <td>
+                        {% set delivered = orders|selectattr('status', 'equalto', 'delivered')|list|length %}
+                        <span style="color: #10b981; font-weight: 600;">{{ delivered }} đơn</span>
+                    </td>
+                    <td>{{ "%.1f" % (delivered / orders|length * 100 if orders|length > 0 else 0) }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- TOP SELLING PRODUCTS -->
+    <div class="report-section">
+        <h3>🏆 Sản Phẩm Bán Chạy</h3>
+        {% if orders %}
+            <ul class="best-products">
+                {% set product_sales = {} %}
+                {% for order in orders %}
+                    {% for item in order.order_items %}
+                        {% if item.product_id in product_sales %}
+                            {% set _ = product_sales[item.product_id].__setitem__('quantity', product_sales[item.product_id]['quantity'] + item.quantity) %}
+                        {% else %}
+                            {% set _ = product_sales.update({item.product_id: {'name': item.product.name, 'quantity': item.quantity, 'price': item.price}}) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {% for product_id, data in (product_sales.items()|sort(attribute='1.quantity', reverse=True))[:5] %}
+                    <li class="best-product-item">
+                        <div style="display: flex; align-items: center; flex: 1;">
+                            <div class="product-rank">{{ loop.index }}</div>
+                            <div class="product-info">
+                                <strong>{{ data['name'] }}</strong>
+                                <small>Giá: {{ "{:,.0f}".format(data['price']) }}₫</small>
+                            </div>
+                        </div>
+                        <div class="product-sales">{{ data['quantity'] }} bán</div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="text-align: center; color: #9ca3af;">Chưa có dữ liệu bán hàng</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ==================== EDIT PRODUCT MODAL ==================== -->
+<div id="editProductModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Chỉnh Sửa Sản Phẩm</h2>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="editFormContainer">
+                <form id="editProductForm">
+                    <input type="hidden" id="editProductId" name="product_id">
+                    
+                    <div class="form-group">
+                        <label for="editName">Tên Sản Phẩm</label>
+                        <input type="text" id="editName" name="name" required>
+                        <span class="form-error form-error-name"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPrice">Giá (₫)</label>
+                        <input type="number" id="editPrice" name="price" step="0.01" min="0" required>
+                        <span class="form-error form-error-price"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editQuantity">Số Lượng</label>
+                        <input type="number" id="editQuantity" name="quantity" min="0" required>
+                        <span class="form-error form-error-quantity"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editDescription">Mô Tả</label>
+                        <textarea id="editDescription" name="description"></textarea>
+                        <span class="form-error form-error-description"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editImageUrl">URL Ảnh</label>
+                        <input type="text" id="editImageUrl" name="image_url">
+                        <span class="form-error form-error-image_url"></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeEditModal()">Hủy</button>
+            <button type="button" class="btn-primary" id="submitEditBtn" onclick="submitEditProduct()">💾 Lưu Thay Đổi</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab Management
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Deactivate all buttons
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    event.target.classList.add('active');
+}
+
+// Inventory Management
+function submitInventoryAdjustment() {
+    const productId = document.getElementById('adjustProduct').value;
+    const quantity = document.getElementById('adjustQuantity').value;
+    
+    if (!productId || !quantity) {
+        showToast('⚠️ Vui lòng chọn sản phẩm và nhập số lượng', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('type', 'in');
+    formData.append('quantity', quantity);
+    
+    fetch('/admin/adjust-inventory', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✓ ' + data.message, 'success');
+            document.getElementById('inventoryAdjustmentForm').reset();
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showToast('❌ ' + data.message, 'error');
+        }
+    })
+    .catch(err => {
+        showToast('❌ Lỗi: ' + err.message, 'error');
+    });
+}
+
+// Edit Modal Functions
+function openEditModal(productId) {
+    const modal = document.getElementById('editProductModal');
+    const submitBtn = document.getElementById('submitEditBtn');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span>Đang tải...';
+    
+    fetch(`/admin/product/${productId}`)
+        .then(response => response.ok ? response.json() : null)
+        .then(data => {
+            if (data) {
+                document.getElementById('editProductId').value = data.id;
+                document.getElementById('editName').value = data.name;
+                document.getElementById('editPrice').value = data.price;
+                document.getElementById('editQuantity').value = data.quantity;
+                document.getElementById('editDescription').value = data.description || '';
+                document.getElementById('editImageUrl').value = data.image_url || '';
+            } else {
+                loadProductFromTable(productId);
+            }
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '💾 Lưu Thay Đổi';
+            modal.classList.add('show');
+            clearErrors();
+        })
+        .catch(error => {
+            console.warn('Error:', error);
+            loadProductFromTable(productId);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '💾 Lưu Thay Đổi';
+            modal.classList.add('show');
+        });
+}
+
+function loadProductFromTable(productId) {
+    const row = document.querySelector(`button[onclick*="openEditModal(${productId})"]`).closest('tr');
+    const cells = row.querySelectorAll('td');
+    
+    document.getElementById('editProductId').value = productId;
+    document.getElementById('editName').value = cells[1].querySelector('strong').textContent;
+    document.getElementById('editPrice').value = cells[2].textContent.replace(/[^\d.]/g, '');
+    document.getElementById('editQuantity').value = cells[3].textContent.trim();
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editProductModal');
+    modal.classList.remove('show');
+    document.getElementById('editProductForm').reset();
+    clearErrors();
+}
+
+function clearErrors() {
+    document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
+    document.querySelectorAll('#editProductForm input, #editProductForm textarea').forEach(el => {
+        el.classList.remove('error');
+    });
+}
+
+function validateForm() {
+    clearErrors();
+    let isValid = true;
+    
+    const name = document.getElementById('editName').value.trim();
+    const price = document.getElementById('editPrice').value.trim();
+    const quantity = document.getElementById('editQuantity').value.trim();
+    
+    if (!name) {
+        showError('editName', 'Tên sản phẩm không được để trống');
+        isValid = false;
+    }
+    
+    if (!price || isNaN(price) || parseFloat(price) < 0) {
+        showError('editPrice', 'Giá phải là số dương');
+        isValid = false;
+    }
+    
+    if (!quantity || isNaN(quantity) || parseInt(quantity) < 0) {
+        showError('editQuantity', 'Số lượng phải là số không âm');
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+function showError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    field.classList.add('error');
+    const errorSpan = field.parentElement.querySelector('.form-error');
+    if (errorSpan) errorSpan.textContent = message;
+}
+
+function submitEditProduct() {
+    if (!validateForm()) return;
+    
+    const productId = document.getElementById('editProductId').value;
+    const submitBtn = document.getElementById('submitEditBtn');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span>Đang lưu...';
+    
+    const formData = new FormData();
+    formData.append('name', document.getElementById('editName').value.trim());
+    formData.append('price', document.getElementById('editPrice').value.trim());
+    formData.append('quantity', document.getElementById('editQuantity').value.trim());
+    formData.append('description', document.getElementById('editDescription').value.trim());
+    formData.append('image_url', document.getElementById('editImageUrl').value.trim());
+    
+    fetch(`/admin/update-product/${productId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✓ ' + data.message, 'success');
+            closeEditModal();
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showToast('❌ ' + data.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '💾 Lưu Thay Đổi';
+        }
+    })
+    .catch(error => {
+        showToast('❌ Lỗi: ' + error.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '💾 Lưu Thay Đổi';
+    });
+}
+
+// Delete Product
+function deleteProduct(productId) {
+    showConfirmDialog(
+        '⚠️ Xóa Sản Phẩm',
+        'Bạn chắc chắn muốn xóa sản phẩm này không?\nHành động này không thể hoàn tác!',
+        () => performDelete(productId)
+    );
+}
+
+function performDelete(productId) {
+    const btn = document.querySelector(`button[onclick="deleteProduct(${productId})"]`);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Xóa...';
+    
+    fetch(`/admin/delete-product/${productId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✓ ' + data.message, 'success');
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast('❌ ' + data.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🗑️ Xóa';
+            }
+        })
+        .catch(error => {
+            showToast('❌ Lỗi: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = '🗑️ Xóa';
+        });
+}
+
+// Order Management
+function updateOrderStatus(orderId, status) {
+    const select = event.target;
+    select.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch(`/admin/update-order-status/${orderId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✓ ' + data.message, 'success');
+        } else {
+            showToast('❌ ' + data.message, 'error');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        showToast('❌ Lỗi', 'error');
+        location.reload();
+    })
+    .finally(() => select.disabled = false);
+}
+
+function viewOrder(orderId) {
+    fetch(`/admin/order/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let msg = `📦 ĐƠN HÀNG #${orderId}\n`;
+                msg += '━━━━━━━━━━━━━━━━━━━━━━\n';
+                data.items.forEach((item, i) => {
+                    msg += `${i+1}. ${item.product_name}\n`;
+                    msg += `   📊 ${item.quantity}x |💰 ${item.price}₫\n`;
+                });
+                msg += '━━━━━━━━━━━━━━━━━━━━━━\n';
+                msg += `💵 TỔNG: ${data.total}₫`;
+                alert(msg);
+            } else {
+                showToast('❌ Không tìm thấy đơn hàng', 'error');
+            }
+        })
+        .catch(error => showToast('❌ Lỗi', 'error'));
+}
+
+// Toast Notifications
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${message}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+// Confirm Dialog
+function showConfirmDialog(title, message, onConfirm) {
+    let modal = document.getElementById('customConfirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customConfirmModal';
+        modal.className = 'confirm-modal';
+        modal.innerHTML = `
+            <div class="confirm-content">
+                <div class="confirm-icon"></div>
+                <h3 id="confirmTitle"></h3>
+                <p id="confirmMessage"></p>
+                <div class="confirm-actions">
+                    <button class="btn-cancel" id="confirmCancel">Hủy</button>
+                    <button class="btn-confirm" id="confirmConfirm">Xác Nhận</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.querySelector('#customConfirmModal .confirm-icon').textContent = title.split(' ')[0];
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    
+    document.getElementById('confirmConfirm').onclick = () => {
+        modal.classList.remove('show');
+        setTimeout(onConfirm, 300);
+    };
+    
+    document.getElementById('confirmCancel').onclick = () => modal.classList.remove('show');
+    
+    modal.onclick = (e) => e.target === modal && modal.classList.remove('show');
+    modal.classList.add('show');
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = document.getElementById('editProductModal');
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && editModal.classList.contains('show')) {
+            closeEditModal();
+        }
+    });
+});
+</script>
+
+{% endblock %}
