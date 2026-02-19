@@ -1,52 +1,180 @@
-# Tech Store - Nền Tảng Mua Bán Trực Tuyến
+# Tech Store - Nền Tảng Mua Bán Trực Tuyến 🛍️
 
-Dự án web e-commerce hoàn chỉnh được xây dựng bằng **Flask**, **SQLAlchemy**, và **HTML/CSS**.
+Một nền tảng e-commerce hoàn chỉnh được xây dựng bằng **Flask**, **SQLAlchemy**, **HTML5**, **CSS3** và **JavaScript**.
 
 ## ✨ Chức Năng Chính
 
 ### 👤 Quản Lý Tài Khoản
 - ✅ Đăng ký tài khoản mới
-- ✅ Đăng nhập / Đăng xuất
-- ✅ Quản lý hồ sơ người dùng
-- ✅ Lịch sử đơn hàng
+- ✅ Đăng nhập / Đăng xuất an toàn
+- ✅ Quản lý thông tin cá nhân
+- ✅ Lịch sử mua hàng
 
 ### 🛍️ Mua Sắm
-- ✅ Danh sách sản phẩm với phân trang
-- ✅ Chi tiết sản phẩm chi tiết
-- ✅ Giỏ hàng
-- ✅ Thanh toán (COD, Chuyển khoản, Thẻ tín dụng)
-- ✅ Xác nhận đơn hàng
+- ✅ Danh sách sản phẩm (12 items/trang)
+- ✅ Chi tiết sản phẩm (ảnh, mô tả, giá, số lượng)
+- ✅ Giỏ hàng (thêm, xóa sản phẩm)
+- ✅ Thanh toán linh hoạt (COD, Chuyển khoản, Thẻ tín dụng)
+- ✅ Xác nhận đơn hàng tức thời
 
 ### 📦 Quản Lý Đơn Hàng
-- ✅ Theo dõi trạng thái đơn hàng
-- ✅ Lịch sử mua hàng
-- ✅ Hủy đơn hàng
+- ✅ Theo dõi trạng thái (Chờ Xác Nhận → Đã Thanh Toán → Đang Gửi → Đã Giao)
+- ✅ Lịch sử đơn hàng chi tiết
+- ✅ Kiểm tra thông tin từng sản phẩm
 
 ### 👨‍💼 Trang Quản Trị (Admin)
-- ✅ Quản lý sản phẩm (Thêm, Sửa, Xóa)
-- ✅ Quản lý đơn hàng (Cập nhật trạng thái)
-- ✅ Quản lý người dùng
-- ✅ Xem thống kê
+- ✅ **Quản Lý Sản Phẩm**: Thêm, Sửa, Xóa, Cập nhật giá & số lượng
+- ✅ **Quản Lý Đơn Hàng**: Cập nhật trạng thái, xem chi tiết đơn hàng
+- ✅ **Quản Lý Người Dùng**: Liệt kê tất cả người dùng, phân biệt Admin & User
+- ✅ **Giao Diện Tab**: Chuyển đổi dễ dàng giữa các mục
 
-## 🚀 Cài Đặt và Chạy
+## 🚀 Cài Đặt Nhanh
 
 ### Yêu Cầu
 - Python 3.8+
 - pip
+- SQLite (mặc định) hoặc PostgreSQL
 
-### Bước 1: Clone hoặc Tải Dự Án
+### 1️⃣ Cài Đặt Dependencies
 ```bash
 cd c:\Users\MyPC\Desktop\Điện toán đám mây\web_v1
+pip install -r requirements.txt
 ```
 
-### Bước 2: Tạo Virtual Environment
+### 2️⃣ Chạy Ứng Dụng
 ```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
+python app.py
 ```
+Mở trình duyệt và truy cập: **http://localhost:5000**
+
+### 3️⃣ Đăng Nhập Admin
+- **Username**: `admin`
+- **Password**: `admin123`
+
+## 🔐 Tài Khoản Test
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | admin123 |
+| User | user | user123 |
+
+## 📁 Cấu Trúc Dự Án
+
+```
+web_v1/
+├── app.py                  # Backend chính
+├── requirements.txt        # Dependencies
+├── README.md              # Hướng dẫn này
+├── render.yaml            # Config deploy Render
+├── Dockerfile             # Config Docker
+├── static/
+│   └── style.css          # CSS chính cho toàn ứng dụng
+└── templates/
+    ├── layout.html        # Template chính
+    ├── index.html         # Trang chủ (danh sách sản phẩm)
+    ├── product_detail.html # Chi tiết sản phẩm
+    ├── login.html         # Đăng nhập
+    ├── register.html      # Đăng ký
+    ├── cart.html          # Giỏ hàng
+    ├── checkout.html      # Thanh toán
+    ├── order_success.html # Xác nhận đơn hàng
+    ├── orders.html        # Lịch sử đơn hàng
+    └── admin.html         # Trang quản trị
+```
+
+## 🎯 Các API Endpoint Chính
+
+| Method | URL | Chức Năng |
+|--------|-----|----------|
+| GET | `/` | Trang chủ |
+| GET | `/product/<id>` | Chi tiết sản phẩm |
+| GET/POST | `/register` | Đăng ký |
+| GET/POST | `/login` | Đăng nhập |
+| GET | `/logout` | Đăng xuất |
+| GET | `/cart` | Xem giỏ hàng |
+| POST | `/add-to-cart/<id>` | Thêm vào giỏ |
+| POST | `/remove-from-cart/<id>` | Xóa khỏi giỏ |
+| GET/POST | `/checkout` | Thanh toán |
+| GET | `/order-success/<id>` | Xác nhận đơn hàng |
+| GET | `/orders` | Lịch sử đơn hàng |
+| GET | `/admin` | Trang quản trị |
+| POST | `/admin/add-product` | Thêm sản phẩm |
+| POST | `/admin/update-product/<id>` | Cập nhật sản phẩm |
+| POST | `/admin/delete-product/<id>` | Xóa sản phẩm |
+| POST | `/admin/update-order-status/<id>` | Cập nhật trạng thái đơn hàng |
+| GET | `/admin/order/<id>` | Xem chi tiết đơn hàng (API) |
+
+## 🗄️ Cơ Sở Dữ Liệu
+
+### User (Người Dùng)
+- id, username, email, password, is_admin, created_at
+
+### Product (Sản Phẩm)
+- id, name, description, price, quantity, image_url, created_at
+
+### Order (Đơn Hàng)
+- id, user_id, total_price, status, created_at
+
+### OrderItem (Chi Tiết Đơn Hàng)
+- id, order_id, product_id, quantity, price
+
+### CartItem (Giỏ Hàng)
+- id, user_id, product_id, quantity
+
+## 🎨 Tính Năng Giao Diện
+
+- ✅ **Responsive Design**: Hỗ trợ Mobile, Tablet, Desktop
+- ✅ **Modern UI**: Gradient backgrounds, smooth animations
+- ✅ **Dark-Light Support**: Tối ưu một cho cả mode sáng
+- ✅ **Form Validation**: Server-side & Client-side
+- ✅ **Error Handling**: 404, 500 pages
+- ✅ **Flash Messages**: Thông báo thành công/lỗi
+
+## 🔧 Biến Môi Trường
+
+```bash
+# Tùy chọn (sẽ sử dụng mặc định nếu không thiết lập)
+SECRET_KEY=your-secret-key         # Flask session key
+DATABASE_URL=sqlite:///shop.db      # Database connection
+FLASK_ENV=development               # development hoặc production
+PORT=5000                           # Port để chạy server
+```
+
+## 📚 Công Nghệ Sử Dụng
+
+- **Backend**: Flask 2.3.2, SQLAlchemy 3.0.5
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **Frontend**: HTML5, CSS3, JavaScript (vanilla)
+- **Security**: Werkzeug password hashing
+- **Deployment**: Docker, Render, Gunicorn
+
+## 🐛 Debugging
+
+Nếu gặp lỗi:
+1. Kiểm tra logs trong terminal
+2. Xóa file `shop.db` để reset database
+3. Đảm bảo Python 3.8+ được cài đặt
+4. Chạy lại `pip install -r requirements.txt`
+
+## 🌐 Deploy
+
+### Deploy lên Render
+```bash
+git push # Render sẽ tự động build từ render.yaml
+```
+
+### Deploy lên Docker
+```bash
+docker build -t techstore .
+docker run -p 5000:5000 techstore
+```
+
+## 📝 License
+MIT License - Tự do sử dụng cho mục đích cá nhân & thương mại
+
+## 👥 Hỗ Trợ
+- Email: support@techstore.com
+- Hotline: 1900-xxxx
 
 ### Bước 3: Cài Đặt Dependencies
 ```bash

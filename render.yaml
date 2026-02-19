@@ -13,11 +13,10 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: techstore-db
-    dockerCommand: python app.py
+          property: connectionString
+    healthCheckPath: /
+    healthCheckInterval: 30
 
-  - type: pserv
-    name: techstore-db
-    runtime: python
-    plan: starter
-    dbName: techstore
-    user: postgres
+databases:
+  - name: techstore-db
+    engine: postgres
