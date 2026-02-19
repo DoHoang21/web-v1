@@ -275,6 +275,28 @@ def admin():
                          users=users, title='Trang Quản Trị')
 
 
+@app.route('/admin/product/<int:product_id>', methods=['GET'])
+def admin_get_product(product_id):
+    """API endpoint để lấy dữ liệu sản phẩm"""
+    is_admin = session.get('is_admin', False)
+    if not is_admin:
+        return jsonify({'success': False, 'message': 'Không có quyền'}), 403
+    
+    try:
+        product = Product.query.get_or_404(product_id)
+        return jsonify({
+            'id': product.id,
+            'name': product.name,
+            'description': product.description,
+            'price': product.price,
+            'quantity': product.quantity,
+            'image_url': product.image_url
+        })
+    except Exception as e:
+        logger.error(f"Error getting product: {str(e)}")
+        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+
+
 # ĐÃ SỬA: Thay vì return jsonify, hàm này dùng flash và redirect
 @app.route('/admin/add-product', methods=['POST'])
 def admin_add_product():
@@ -337,33 +359,54 @@ def admin_update_product(product_id):
     try:
         product = Product.query.get_or_404(product_id)
         
+        # Lấy dữ liệu từ form
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         price_str = request.form.get('price', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
         image_url = request.form.get('image_url', '').strip()
         
-        if not name or not price_str:
-            return jsonify({'success': False, 'message': 'Vui lòng điền tên và giá'}), 400
+        # Validation
+        errors = []
         
-        try:
-            price = float(price_str)
-            quantity = int(quantity_str) if quantity_str else product.quantity
-            
-            if price < 0 or quantity < 0:
-                return jsonify({'success': False, 'message': 'Giá và số lượng không được âm'}), 400
-        except ValueError:
-            return jsonify({'success': False, 'message': 'Giá và số lượng phải là số hợp lệ'}), 400
+        if not name:
+            errors.append('Tên sản phẩm không được để trống')
         
+        if not price_str:
+            errors.append('Giá không được để trống')
+        else:
+            try:
+                price = float(price_str)
+                if price < 0:
+                    errors.append('Giá không được âm')
+            except ValueError:
+                errors.append('Giá phải là số hợp lệ')
+        
+        if not quantity_str:
+            errors.append('Số lượng không được để trống')
+        else:
+            try:
+                quantity = int(quantity_str)
+                if quantity < 0:
+                    errors.append('Số lượng không được âm')
+            except ValueError:
+                errors.append('Số lượng phải là số nguyên')
+        
+        if errors:
+            return jsonify({'success': False, 'message': ', '.join(errors)}), 400
+        
+        # Cập nhật sản phẩm
         product.name = name
         product.description = description
-        product.price = price
-        product.quantity = quantity
+        product.price = float(price_str)
+        product.quantity = int(quantity_str)
         product.image_url = image_url if image_url else product.image_url
         
         db.session.commit()
         logger.info(f"Admin updated product: {product.name} (id={product.id})")
+        
         return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
+        
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error updating product: {str(e)}")
@@ -377,11 +420,29 @@ def admin_delete_product(product_id):
     if not is_admin:
         return jsonify({'success': False, 'message': 'Không có quyền'}), 403
     
-    product = Product.query.get_or_404(product_id)
-    db.session.delete(product)
-    db.session.commit()
+    try:
+        product = Product.query.get_or_404(product_id)
+        
+        # Kiểm tra xem sản phẩm này có trong đơn hàng nào không
+        order_items = OrderItem.query.filter_by(product_id=product_id).count()
+        
+        if order_items > 0:
+            return jsonify({
+                'success': False, 
+                'message': f'Không thể xóa sản phẩm này vì nó đã được đặt mua {order_items} lần. Vui lòng đặt số lượng bằng 0 để ẩn sản phẩm.'
+            }), 400
+        
+        product_name = product.name
+        db.session.delete(product)
+        db.session.commit()
+        
+        logger.info(f"Admin deleted product: {product_name} (id={product_id})")
+        return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
     
-    return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting product: {str(e)}")
+        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 
 # Giữ nguyên return jsonify vì Javascript fetch của bạn đang chờ chuỗi JSON
@@ -391,12 +452,35 @@ def admin_update_order_status(order_id):
     if not is_admin:
         return jsonify({'success': False, 'message': 'Không có quyền'}), 403
     
-    order = Order.query.get_or_404(order_id)
-    status = request.form.get('status')
-    order.status = status
-    db.session.commit()
+    try:
+        order = Order.query.get_or_404(order_id)
+        status = request.form.get('status', '').strip()
+        
+        # Validate status
+        valid_statuses = ['pending', 'paid', 'shipped', 'delivered']
+        if status not in valid_statuses:
+            return jsonify({
+                'success': False, 
+                'message': f'Trạng thái không hợp lệ. Các trạng thái hợp lệ: {", ".join(valid_statuses)}'
+            }), 400
+        
+        if order.status == status:
+            return jsonify({
+                'success': True,
+                'message': 'Trạng thái đơn hàng không thay đổi (giống trạng thái cũ)'
+            })
+        
+        old_status = order.status
+        order.status = status
+        db.session.commit()
+        
+        logger.info(f"Admin updated order #{order_id} status from '{old_status}' to '{status}'")
+        return jsonify({'success': True, 'message': f'Cập nhật trạng thái thành công: {old_status} → {status}'})
     
-    return jsonify({'success': True, 'message': 'Cập nhật trạng thái đơn hàng thành công'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating order status: {str(e)}")
+        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 
 @app.route('/admin/order/<int:order_id>', methods=['GET'])
