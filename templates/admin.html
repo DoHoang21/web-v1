@@ -603,7 +603,7 @@
             <div class="inventory-card-value" style="color: #667eea;">
                 {% set ns = namespace(total=0) %}
                 {% for order in orders %}
-                    {% for item in order.order_items %}
+                    {% for item in order.items %}
                         {% set ns.total = ns.total + item.quantity %}
                     {% endfor %}
                 {% endfor %}
@@ -897,7 +897,7 @@
             <ul class="best-products">
                 {% set product_sales = {} %}
                 {% for order in orders %}
-                    {% for item in order.order_items %}
+                    {% for item in order.items %}
                         {% if item.product_id in product_sales %}
                             {% set _ = product_sales[item.product_id].__setitem__('quantity', product_sales[item.product_id]['quantity'] + item.quantity) %}
                         {% else %}
