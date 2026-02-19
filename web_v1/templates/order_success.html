@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="text-align: center; margin-top: 3rem; margin-bottom: 3rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">✓</div>
+    <h1 style="color: #27ae60; margin-bottom: 0.5rem;">Đặt Hàng Thành Công!</h1>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 1.1rem;">Cơm ơn bạn đã mua sắm tại Tech Store</p>
+</div>
+
+<div style="max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h2 style="margin-bottom: 1.5rem; border-bottom: 2px solid #667eea; padding-bottom: 1rem;">📦 Thông Tin Đơn Hàng</h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <div>
+            <p style="color: #666; margin-bottom: 0.3rem;">Mã Đơn Hàng</p>
+            <p style="font-size: 1.3rem; font-weight: bold; color: #667eea;">#{{ order.id }}</p>
+        </div>
+        <div>
+            <p style="color: #666; margin-bottom: 0.3rem;">Tổng Tiền</p>
+            <p style="font-size: 1.3rem; font-weight: bold; color: #667eea;">{{ "{:,.0f}".format(order.total_price) }} ₫</p>
+        </div>
+        <div>
+            <p style="color: #666; margin-bottom: 0.3rem;">Trạng Thái</p>
+            <p style="font-size: 1.1rem; font-weight: bold; color: #27ae60;">✓ {{ order.status }}</p>
+        </div>
+        <div>
+            <p style="color: #666; margin-bottom: 0.3rem;">Ngày Đặt</p>
+            <p style="font-size: 1.1rem; font-weight: bold;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 1rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem;">Chi Tiết Sản Phẩm</h3>
+    <table style="width: 100%; margin-bottom: 2rem;">
+        <thead>
+            <tr>
+                <th style="text-align: left;">Sản Phẩm</th>
+                <th style="text-align: center;">Số Lượng</th>
+                <th style="text-align: right;">Giá</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td style="text-align: center;">{{ item.quantity }}</td>
+                    <td style="text-align: right;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="padding: 1rem; background: #f0f7ff; border-radius: 5px; margin-bottom: 2rem;">
+        <p><strong>📧 Email Xác Nhận:</strong> Hãy kiểm tra email của bạn để nhận xác nhận đơn hàng.</p>
+        <p style="margin-top: 0.5rem;"><strong>📞 Hỗ Trợ:</strong> Liên hệ với chúng tôi nếu bạn có câu hỏi.</p>
+    </div>
+
+    <div style="display: flex; gap: 1rem;">
+        <a href="/" class="btn-secondary" style="flex: 1; text-align: center; padding: 0.8rem;">← Tiếp Tục Mua Hàng</a>
+        <a href="/orders" class="btn-primary" style="flex: 1; text-align: center; padding: 0.8rem;">Xem Đơn Hàng →</a>
+    </div>
+</div>
+{% endblock %}

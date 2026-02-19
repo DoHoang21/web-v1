@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem;">
+    <!-- Ảnh sản phẩm -->
+    <div>
+        <div class="product-image" style="height: 400px; border-radius: 8px; overflow: hidden;">
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+                <span style="font-size: 3rem;">📦</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chi tiết sản phẩm -->
+    <div>
+        <h1>{{ product.name }}</h1>
+        
+        <div class="product-price" style="margin: 1.5rem 0; font-size: 2rem;">
+            {{ "{:,.0f}".format(product.price) }} ₫
+        </div>
+
+        <div style="padding: 1rem; background: #f9f9f9; border-radius: 5px; margin-bottom: 2rem;">
+            <p><strong>Mô Tả:</strong></p>
+            <p>{{ product.description }}</p>
+        </div>
+
+        <div style="padding: 1rem; background: #e3f2fd; border-radius: 5px; margin-bottom: 2rem;">
+            <p><strong>Số Lượng Có Sẵn:</strong> <span style="color: #667eea; font-size: 1.2rem;">{{ product.quantity }}</span> sản phẩm</p>
+        </div>
+
+        {% if product.quantity > 0 %}
+            {% if session.get('user_id') %}
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 5px; padding: 0.5rem;">
+                        <button type="button" onclick="decreaseQuantity()" style="background: none; border: none; padding: 0.5rem 0.8rem; cursor: pointer; font-size: 1.2rem;">−</button>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.quantity }}" style="width: 60px; border: none; text-align: center; font-size: 1rem;">
+                        <button type="button" onclick="increaseQuantity()" style="background: none; border: none; padding: 0.5rem 0.8rem; cursor: pointer; font-size: 1.2rem;">+</button>
+                    </div>
+                    <button type="button" id="addCartBtn" data-product-id="{{ product.id }}" class="btn-primary" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Thêm Vào Giỏ Hàng</button>
+                </div>
+            {% else %}
+                <p style="color: #f44336; margin-bottom: 2rem;">⚠️ Vui lòng <a href="/login" style="color: #667eea;">đăng nhập</a> để mua hàng</p>
+                <a href="/login" class="btn-primary" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Đăng Nhập Ngay</a>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-error">
+                <strong>Hết Hàng</strong> - Sản phẩm này hiện không có sẵn
+            </div>
+        {% endif %}
+
+        <a href="/" class="btn-secondary" style="padding: 0.8rem 1.5rem;">← Quay Lại</a>
+    </div>
+</div>
+
+<script>
+function decreaseQuantity() {
+    const input = document.getElementById('quantity');
+    if (input.value > 1) {
+        input.value--;
+    }
+}
+
+function increaseQuantity() {
+    const input = document.getElementById('quantity');
+    const maxQty = parseInt(input.getAttribute('max'));
+    if (parseInt(input.value) < maxQty) {
+        input.value++;
+    }
+}
+
+function addToCart(productId) {
+    const quantity = document.getElementById('quantity').value;
+    
+    const formData = new FormData();
+    formData.append('quantity', quantity);
+    
+    fetch(`/add-to-cart/${productId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra, vui lòng thử lại');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const addCartBtn = document.getElementById('addCartBtn');
+    if (addCartBtn) {
+        addCartBtn.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            addToCart(productId);
+        });
+    }
+});
+</script>
+{% endblock %}
