@@ -471,7 +471,13 @@
         </div>
         <div class="inventory-card">
             <div class="inventory-card-title">Giá Trị Tồn Kho</div>
-            <div class="inventory-card-value" style="color: #10b981;">{{ "{:,.0f}".format(products|map(attribute='price')|map(attribute='*', 0)|sum) }}</div>
+            <div class="inventory-card-value" style="color: #10b981;">
+                {% set total_value = 0 %}
+                {% for product in products %}
+                    {% set total_value = total_value + (product.price * product.quantity) %}
+                {% endfor %}
+                {{ "{:,.0f}".format(total_value) }}
+            </div>
             <div class="inventory-card-unit">₫</div>
         </div>
     </div>
