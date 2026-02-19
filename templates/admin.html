@@ -599,15 +599,17 @@
             <div class="inventory-card-unit">sản phẩm</div>
         </div>
         <div class="inventory-card">
-            <div class="inventory-card-title">Giá Trị Tồn Kho</div>
-            <div class="inventory-card-value" style="color: #10b981;">
-                {% set total_value = 0 %}
-                {% for product in products %}
-                    {% set total_value = total_value + (product.price * product.quantity) %}
+            <div class="inventory-card-title">Xuất Kho</div>
+            <div class="inventory-card-value" style="color: #667eea;">
+                {% set ns = namespace(total=0) %}
+                {% for order in orders %}
+                    {% for item in order.order_items %}
+                        {% set ns.total = ns.total + item.quantity %}
+                    {% endfor %}
                 {% endfor %}
-                {{ "{:,.0f}".format(total_value) }}
+                {{ ns.total }}
             </div>
-            <div class="inventory-card-unit">₫</div>
+            <div class="inventory-card-unit">đơn vị</div>
         </div>
     </div>
 
