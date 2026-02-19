@@ -500,21 +500,16 @@
 
     <!-- INVENTORY ADJUSTMENT -->
     <div class="adjustment-form">
-        <h3>🔄 Điều Chỉnh Tồn Kho</h3>
+        <h3>� Nhập Hàng Mới</h3>
         <form id="inventoryAdjustmentForm">
-            <div class="adjustment-controls">
+            <div class="adjustment-controls" style="grid-template-columns: 1fr 1fr auto;">
                 <select id="adjustProduct" name="product_id" required>
                     <option value="">-- Chọn Sản Phẩm --</option>
                     {% for product in products %}
                         <option value="{{ product.id }}">{{ product.name }}</option>
                     {% endfor %}
                 </select>
-                <select id="adjustType" name="type" required>
-                    <option value="">-- Loại Điều Chỉnh --</option>
-                    <option value="in">➕ Nhập Kho</option>
-                    <option value="out">➖ Xuất Kho</option>
-                </select>
-                <input type="number" id="adjustQuantity" name="quantity" min="1" placeholder="Số lượng" required>
+                <input type="number" id="adjustQuantity" name="quantity" min="1" placeholder="Số lượng nhập" required>
                 <button type="button" class="adjustment-btn" onclick="submitInventoryAdjustment()">💾 Lưu</button>
             </div>
         </form>
@@ -736,17 +731,16 @@ function switchTab(tabName) {
 // Inventory Management
 function submitInventoryAdjustment() {
     const productId = document.getElementById('adjustProduct').value;
-    const type = document.getElementById('adjustType').value;
     const quantity = document.getElementById('adjustQuantity').value;
     
-    if (!productId || !type || !quantity) {
-        alert('Vui lòng điền đầy đủ thông tin');
+    if (!productId || !quantity) {
+        showToast('⚠️ Vui lòng chọn sản phẩm và nhập số lượng', 'error');
         return;
     }
     
     const formData = new FormData();
     formData.append('product_id', productId);
-    formData.append('type', type);
+    formData.append('type', 'in');
     formData.append('quantity', quantity);
     
     fetch('/admin/adjust-inventory', {
