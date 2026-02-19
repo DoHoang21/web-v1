@@ -160,6 +160,141 @@
 .quantity-medium { background: #fff3cd; }
 .quantity-low { background: #f8d7da; }
 
+/* ==================== INVENTORY STYLES ==================== */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.inventory-card {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.inventory-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.inventory-card-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.inventory-card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.inventory-card-unit {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.low-stock-alert {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #f59e0b;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.low-stock-alert h3 {
+    margin: 0 0 0.8rem 0;
+    color: #92400e;
+    font-size: 1rem;
+}
+
+.low-stock-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.low-stock-item {
+    padding: 0.6rem 0;
+    color: #78350f;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.low-stock-item span {
+    background: rgba(245, 158, 11, 0.2);
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #d97706;
+}
+
+.adjustment-form {
+    background: linear-gradient(135deg, #f0f4ff 0%, #f8f9ff 100%);
+    border: 2px solid #e0e4ff;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 5px solid #667eea;
+}
+
+.adjustment-form h3 {
+    margin: 0 0 1.5rem 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+.adjustment-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.adjustment-controls select,
+.adjustment-controls input {
+    padding: 0.8rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.adjustment-controls select:focus,
+.adjustment-controls input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.adjustment-btn {
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.adjustment-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 .empty-state {
     text-align: center;
     padding: 3rem 1rem;
@@ -214,6 +349,7 @@
 
 <div class="admin-tabs">
     <button class="admin-tab-btn active" onclick="switchTab('products')">📦 Sản Phẩm</button>
+    <button class="admin-tab-btn" onclick="switchTab('inventory')">🏭 Quản Kho</button>
     <button class="admin-tab-btn" onclick="switchTab('orders')">📋 Đơn Hàng</button>
     <button class="admin-tab-btn" onclick="switchTab('users')">👥 Người Dùng</button>
 </div>
@@ -310,6 +446,121 @@
             <p>Hãy thêm sản phẩm mới bằng form phía trên</p>
         </div>
     {% endif %}
+</div>
+
+<!-- ==================== INVENTORY TAB ==================== -->
+<div id="inventory-tab" class="admin-content" style="display: none;">
+    <div class="admin-section-title">🏭 Quản Lý Kho Hàng</div>
+    
+    <!-- INVENTORY SUMMARY -->
+    <div class="inventory-grid">
+        <div class="inventory-card">
+            <div class="inventory-card-title">Tổng Sản Phẩm</div>
+            <div class="inventory-card-value">{{ products|length }}</div>
+            <div class="inventory-card-unit">sản phẩm</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Tổng Tồn Kho</div>
+            <div class="inventory-card-value">{{ products|map(attribute='quantity')|sum }}</div>
+            <div class="inventory-card-unit">đơn vị</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Cảnh Báo Hết Hàng</div>
+            <div class="inventory-card-value" style="color: #ef4444;">{{ products|selectattr('quantity', 'lt', 5)|list|length }}</div>
+            <div class="inventory-card-unit">sản phẩm</div>
+        </div>
+        <div class="inventory-card">
+            <div class="inventory-card-title">Giá Trị Tồn Kho</div>
+            <div class="inventory-card-value" style="color: #10b981;">{{ "{:,.0f}".format(products|map(attribute='price')|map(attribute='*', 0)|sum) }}</div>
+            <div class="inventory-card-unit">₫</div>
+        </div>
+    </div>
+
+    <!-- LOW STOCK ALERTS -->
+    {% set low_stock_products = products|selectattr('quantity', 'lt', 5)|list %}
+    {% if low_stock_products %}
+        <div class="low-stock-alert">
+            <h3>⚠️ Sản Phẩm Sắp Hết</h3>
+            <ul class="low-stock-list">
+                {% for product in low_stock_products %}
+                    <li class="low-stock-item">
+                        <span>{{ product.name }}</span>
+                        <span>{{ product.quantity }} đơn vị</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- INVENTORY ADJUSTMENT -->
+    <div class="adjustment-form">
+        <h3>🔄 Điều Chỉnh Tồn Kho</h3>
+        <form id="inventoryAdjustmentForm">
+            <div class="adjustment-controls">
+                <select id="adjustProduct" name="product_id" required>
+                    <option value="">-- Chọn Sản Phẩm --</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="adjustType" name="type" required>
+                    <option value="">-- Loại Điều Chỉnh --</option>
+                    <option value="in">➕ Nhập Kho</option>
+                    <option value="out">➖ Xuất Kho</option>
+                </select>
+                <input type="number" id="adjustQuantity" name="quantity" min="1" placeholder="Số lượng" required>
+                <button type="button" class="adjustment-btn" onclick="submitInventoryAdjustment()">💾 Lưu</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- INVENTORY TABLE -->
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 28%;">Tên Sản Phẩm</th>
+                    <th style="width: 12%;">Giá</th>
+                    <th style="width: 12%;">Tồn Kho</th>
+                    <th style="width: 15%;">Tình Trạng</th>
+                    <th style="width: 25%;">Tổng Giá Trị</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td><strong>#{{ product.id }}</strong></td>
+                        <td>
+                            <strong>{{ product.name }}</strong>
+                            <div style="font-size: 0.8rem; color: #999; margin-top: 0.3rem;">
+                                SKU: PROD-{{ product.id }}
+                            </div>
+                        </td>
+                        <td><span style="color: #667eea; font-weight: 600;">{{ "{:,.0f}".format(product.price) }}₫</span></td>
+                        <td>
+                            <strong style="font-size: 1.1rem;">{{ product.quantity }}</strong>
+                            <div style="font-size: 0.8rem; color: #999;">đơn vị</div>
+                        </td>
+                        <td>
+                            {% if product.quantity >= 20 %}
+                                <span class="quantity-badge quantity-high">✓ Đủ</span>
+                            {% elif product.quantity >= 5 %}
+                                <span class="quantity-badge quantity-medium">⚠️ Vừa</span>
+                            {% elif product.quantity > 0 %}
+                                <span class="quantity-badge quantity-low">⚠️ Ít</span>
+                            {% else %}
+                                <span class="quantity-badge quantity-low">❌ Hết</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color: #10b981;">{{ "{:,.0f}".format(product.price * product.quantity) }}₫</strong>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- ==================== ORDERS TAB ==================== -->
@@ -474,6 +725,41 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(tabName + '-tab').style.display = 'block';
     event.target.classList.add('active');
+}
+
+// Inventory Management
+function submitInventoryAdjustment() {
+    const productId = document.getElementById('adjustProduct').value;
+    const type = document.getElementById('adjustType').value;
+    const quantity = document.getElementById('adjustQuantity').value;
+    
+    if (!productId || !type || !quantity) {
+        alert('Vui lòng điền đầy đủ thông tin');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('type', type);
+    formData.append('quantity', quantity);
+    
+    fetch('/admin/adjust-inventory', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✓ ' + data.message, 'success');
+            document.getElementById('inventoryAdjustmentForm').reset();
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showToast('❌ ' + data.message, 'error');
+        }
+    })
+    .catch(err => {
+        showToast('❌ Lỗi: ' + err.message, 'error');
+    });
 }
 
 // Edit Modal Functions

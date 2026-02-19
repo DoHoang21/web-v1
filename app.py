@@ -445,6 +445,57 @@ def admin_delete_product(product_id):
         return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 
+@app.route('/admin/adjust-inventory', methods=['POST'])
+def admin_adjust_inventory():
+    is_admin = session.get('is_admin', False)
+    if not is_admin:
+        return jsonify({'success': False, 'message': 'Không có quyền'}), 403
+    
+    try:
+        product_id = request.form.get('product_id', '')
+        adjustment_type = request.form.get('type', '').strip()
+        quantity_str = request.form.get('quantity', '').strip()
+        
+        # Validation
+        if not product_id or not adjustment_type or not quantity_str:
+            return jsonify({'success': False, 'message': 'Vui lòng điền đầy đủ thông tin'}), 400
+        
+        if adjustment_type not in ['in', 'out']:
+            return jsonify({'success': False, 'message': 'Loại điều chỉnh không hợp lệ'}), 400
+        
+        try:
+            quantity = int(quantity_str)
+            if quantity <= 0:
+                return jsonify({'success': False, 'message': 'Số lượng phải lớn hơn 0'}), 400
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Số lượng phải là số nguyên'}), 400
+        
+        product = Product.query.get_or_404(product_id)
+        old_quantity = product.quantity
+        
+        if adjustment_type == 'in':
+            product.quantity += quantity
+            action = 'Nhập'
+        else:  # out
+            if product.quantity < quantity:
+                return jsonify({'success': False, 'message': 'Tồn kho không đủ để xuất'}), 400
+            product.quantity -= quantity
+            action = 'Xuất'
+        
+        db.session.commit()
+        logger.info(f"Admin adjusted inventory: {product.name} - {action} {quantity} (từ {old_quantity} sang {product.quantity})")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'{action} {quantity} đơn vị {product.name} thành công (từ {old_quantity} sang {product.quantity})'
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adjusting inventory: {str(e)}")
+        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+
+
 # Giữ nguyên return jsonify vì Javascript fetch của bạn đang chờ chuỗi JSON
 @app.route('/admin/update-order-status/<int:order_id>', methods=['POST'])
 def admin_update_order_status(order_id):
