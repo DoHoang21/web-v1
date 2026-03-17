@@ -1,45 +1,84 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>🛒 Giỏ Hàng</h1>
+<div class="mb-2">
+    <h1>🛒 Giỏ Hàng Của Bạn</h1>
+    <p style="color: #718096; margin-top: 0.5rem;">Kiểm tra lại các sản phẩm trước khi thanh toán</p>
+</div>
 
 {% if cart_items %}
-    <table class="mt-2">
-        <thead>
-            <tr>
-                <th>Sản Phẩm</th>
-                <th>Giá</th>
-                <th>Số Lượng</th>
-                <th>Thành Tiền</th>
-                <th>Hành Động</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
+    <div style="background: white; border-radius: 12px; padding: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <table style="margin-bottom: 0; box-shadow: none; border: none;">
+            <thead>
                 <tr>
-                    <td><strong>{{ item.product.name }}</strong></td>
-                    <td>{{ "{:,.0f}".format(item.product.price) }} ₫</td>
-                    <td>{{ item.quantity }}</td>
-                    <td><strong>{{ "{:,.0f}".format(item.product.price * item.quantity) }} ₫</strong></td>
-                    <td>
-                        <form method="POST" action="/remove-from-cart/{{ item.id }}" style="display: inline;">
-                            <button type="submit" class="btn-danger" onclick="return confirm('Bạn chắc chắn muốn xóa?')">Xóa</button>
-                        </form>
-                    </td>
+                    <th style="width: 40%;">Sản Phẩm</th>
+                    <th style="width: 15%; text-align: center;">Đơn Giá</th>
+                    <th style="width: 15%; text-align: center;">Số Lượng</th>
+                    <th style="width: 20%; text-align: right;">Thành Tiền</th>
+                    <th style="width: 10%; text-align: center;">Xóa</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                {% if item.product.image_url %}
+                                    <img src="{{ item.product.image_url }}" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 50px; height: 50px; background: #edf2f7; border-radius: 6px; display: flex; align-items: center; justify-content: center;">📦</div>
+                                {% endif %}
+                                <strong style="color: #2d3748;">{{ item.product.name }}</strong>
+                            </div>
+                        </td>
+                        <td style="text-align: center; color: #718096;">{{ "{:,.0f}".format(item.product.price) }} ₫</td>
+                        <td style="text-align: center;">
+                            <span style="background: #f8fafc; padding: 0.4rem 1rem; border-radius: 6px; font-weight: bold; border: 1px solid #e2e8f0;">{{ item.quantity }}</span>
+                        </td>
+                        <td style="text-align: right; color: #667eea; font-weight: 700; font-size: 1.1rem;">
+                            {{ "{:,.0f}".format(item.product.price * item.quantity) }} ₫
+                        </td>
+                        <td style="text-align: center;">
+                            <form method="POST" action="/remove-from-cart/{{ item.id }}" id="form-remove-{{ item.id }}">
+                                <button type="button" class="btn-danger" style="padding: 0.5rem 0.8rem; background: #fff5f5; color: #e53e3e; border: 1px solid #fc8181;" onclick="confirmRemove('{{ item.product.name }}', 'form-remove-{{ item.id }}')">
+                                    🗑️
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     
-    <div style="text-align: right; margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 8px;">
-        <h2 style="margin-bottom: 1rem;">Tổng Cộng: <span style="color: #667eea;">{{ "{:,.0f}".format(total_price) }} ₫</span></h2>
-        <a href="/" class="btn-secondary">← Tiếp Tục Mua Hàng</a>
-        <a href="/checkout" class="btn-primary" style="margin-left: 1rem;">Thanh Toán →</a>
+    <div style="text-align: right; margin-top: 2rem; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7;">
+        <p style="color: #718096; font-size: 1.1rem; margin-bottom: 0.5rem;">Tổng thanh toán:</p>
+        <h2 style="margin-bottom: 2rem; font-size: 2.5rem; color: #667eea; font-weight: 800;">
+            {{ "{:,.0f}".format(total_price) }} ₫
+        </h2>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="/" class="btn-secondary" style="padding: 1rem 2rem; font-size: 1.1rem;">← Tiếp Tục Mua</a>
+            <a href="/checkout" class="btn-primary" style="padding: 1rem 3rem; font-size: 1.1rem; box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);">Thanh Toán Ngay →</a>
+        </div>
     </div>
 {% else %}
-    <div class="alert alert-info text-center" style="margin-top: 2rem;">
-        <h3>Giỏ hàng trống</h3>
-        <p>Hãy quay lại <a href="/">trang chủ</a> để mua sắm</p>
+    <div style="background: white; border-radius: 12px; padding: 4rem 2rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="font-size: 5rem; margin-bottom: 1.5rem; opacity: 0.5;">🛒</div>
+        <h2 style="color: #2d3748; margin-bottom: 1rem;">Giỏ hàng của bạn đang trống</h2>
+        <p style="color: #718096; margin-bottom: 2rem;">Có vẻ như bạn chưa chọn sản phẩm nào. Hãy khám phá cửa hàng nhé!</p>
+        <a href="/" class="btn-primary" style="padding: 1rem 2.5rem;">Bắt Đầu Mua Sắm</a>
     </div>
 {% endif %}
+
+<script>
+function confirmRemove(productName, formId) {
+    showConfirmDialog(
+        '🗑️ Bỏ sản phẩm',
+        `Bạn có chắc muốn bỏ "${productName}" khỏi giỏ hàng?`,
+        () => {
+            document.getElementById(formId).submit();
+        }
+    );
+}
+</script>
 {% endblock %}

@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="mb-2">
-    <h1>🏪 Danh Sách Sản Phẩm</h1>
-    <p style="color: #666; margin-top: 0.5rem;">Khám phá những sản phẩm công nghệ tốt nhất</p>
+<div class="mb-2" style="text-align: center; padding: 2rem 0;">
+    <h1 style="font-size: 2.5rem; color: #2d3748;">🏪 Khám Phá Sản Phẩm</h1>
+    <p style="color: #718096; margin-top: 0.5rem; font-size: 1.1rem;">Những thiết bị công nghệ hàng đầu dành cho bạn</p>
 </div>
 
 {% if products.items %}
@@ -12,21 +12,25 @@
             <div class="product-card">
                 <div class="product-image">
                     {% if product.image_url %}
-                        <img src="{{ product.image_url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}">
                     {% else %}
-                        <span>📦 Không có ảnh</span>
+                        <span style="font-size: 4rem; opacity: 0.5;">📦</span>
                     {% endif %}
                 </div>
                 <div class="product-info">
                     <h3 class="product-name">{{ product.name }}</h3>
-                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 0.8rem;">{{ product.description[:50] }}...</p>
+                    <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1rem; flex: 1;">
+                        {{ product.description[:60] }}{% if product.description|length > 60 %}...{% endif %}
+                    </p>
                     <div class="product-price">{{ "{:,.0f}".format(product.price) }} ₫</div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <a href="/product/{{ product.id }}" class="btn-secondary" style="flex: 1; text-align: center;">Chi Tiết</a>
+                    <div style="display: flex; gap: 0.8rem;">
+                        <a href="/product/{{ product.id }}" class="btn-secondary" style="flex: 1;">Chi Tiết</a>
                         {% if session.get('user_id') %}
-                            <button onclick="addToCart({{ product.id }})" class="btn-primary" style="flex: 1;">Thêm Vào Giỏ</button>
+                            <button data-id="{{ product.id }}" onclick="quickAddToCart(this, this.dataset.id)" class="btn-primary" style="flex: 1;">
+                                <span class="btn-text">Thêm Giỏ</span>
+                            </button>
                         {% else %}
-                            <a href="/login" class="btn-primary" style="flex: 1; text-align: center;">Thêm Vào Giỏ</a>
+                            <a href="/login" class="btn-primary" style="flex: 1;">Thêm Giỏ</a>
                         {% endif %}
                     </div>
                 </div>
@@ -34,45 +38,50 @@
         {% endfor %}
     </div>
 
-    <!-- Pagination -->
-    <div style="text-align: center; margin-top: 2rem;">
+    <div style="text-align: center; margin-top: 3rem; display: flex; justify-content: center; gap: 1rem; align-items: center;">
         {% if products.has_prev %}
             <a href="/?page={{ products.prev_num }}" class="btn-secondary">← Trang Trước</a>
         {% endif %}
-        
-        <span style="margin: 0 1rem;">Trang {{ products.page }} / {{ products.pages }}</span>
-        
+        <span style="font-weight: 600; color: #4a5568;">Trang {{ products.page }} / {{ products.pages }}</span>
         {% if products.has_next %}
             <a href="/?page={{ products.next_num }}" class="btn-secondary">Trang Sau →</a>
         {% endif %}
     </div>
 {% else %}
-    <div class="alert alert-info text-center">
-        <h3>Không có sản phẩm nào</h3>
+    <div class="alert alert-info text-center" style="justify-content: center; padding: 3rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <h3>Không tìm thấy sản phẩm nào</h3>
     </div>
 {% endif %}
 
 <script>
-function addToCart(productId) {
-    const quantity = prompt('Số lượng:', '1');
-    if (quantity && quantity > 0) {
-        const formData = new FormData();
-        formData.append('quantity', quantity);
-        
-        fetch(`/add-to-cart/${productId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
+function quickAddToCart(btnElement, productId) {
+    const originalText = btnElement.innerHTML;
+    btnElement.innerHTML = '<span class="spinner" style="width: 1rem; height: 1rem; border-width: 2px;"></span>...';
+    btnElement.disabled = true;
+
+    const formData = new FormData();
+    formData.append('quantity', 1); // Mặc định thêm 1 từ trang chủ
+    
+    fetch(`/add-to-cart/${productId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Đã thêm 1 sản phẩm vào giỏ hàng', 'success');
+        } else {
+            showToast(data.message || 'Có lỗi xảy ra', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Lỗi kết nối máy chủ', 'error');
+    })
+    .finally(() => {
+        btnElement.innerHTML = originalText;
+        btnElement.disabled = false;
+    });
 }
 </script>
 {% endblock %}
