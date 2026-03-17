@@ -2,84 +2,226 @@
 
 {% block content %}
 <style>
-/* CSS cho Timeline Đơn Hàng */
-.order-card { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
-.order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #edf2f7; padding-bottom: 1rem; margin-bottom: 2rem; }
-.order-id { font-size: 1.2rem; font-weight: 800; color: #2d3748; }
-.order-date { color: #718096; font-size: 0.9rem; }
+/* Style chuyên nghiệp cho trang Đơn Hàng */
+.page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #edf2f7;
+}
+.page-header h1 {
+    font-size: 2rem;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-weight: 800;
+}
 
-/* Timeline Container */
-.timeline-container { position: relative; margin: 2rem 0 3rem; padding: 0 2rem; }
-.timeline-track { position: absolute; top: 15px; left: 10%; right: 10%; height: 4px; background: #edf2f7; z-index: 1; border-radius: 2px; }
-.timeline-progress { position: absolute; top: 15px; left: 10%; height: 4px; background: #667eea; z-index: 2; transition: width 0.5s ease; border-radius: 2px; }
-.timeline-steps { display: flex; justify-content: space-between; position: relative; z-index: 3; }
+.order-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.order-card:hover {
+    box-shadow: 0 8px 15px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+    border-color: #cbd5e0;
+}
 
-.timeline-step { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; width: 80px; text-align: center; }
-.step-icon { width: 34px; height: 34px; background: white; border: 3px solid #edf2f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #a0aec0; transition: all 0.3s; }
-.step-label { font-size: 0.85rem; font-weight: 600; color: #a0aec0; }
+.order-header {
+    background: #f8fafc;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #edf2f7;
+}
+.order-id {
+    font-weight: 800;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+.order-date {
+    color: #718096;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+}
 
-/* Active States */
-.timeline-step.active .step-icon { border-color: #667eea; background: #667eea; color: white; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2); }
-.timeline-step.active .step-label { color: #2d3748; }
-.timeline-step.completed .step-icon { border-color: #667eea; background: white; color: #667eea; }
-.timeline-step.completed .step-label { color: #667eea; }
+.order-status {
+    padding: 0.5rem 1.2rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+/* Các màu sắc trạng thái */
+.status-pending { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+.status-paid { background: #ebf8ff; color: #3182ce; border: 1px solid #bee3f8; }
+.status-shipped { background: #faf5ff; color: #805ad5; border: 1px solid #e9d8fd; }
+.status-delivered { background: #f0fff4; color: #38a169; border: 1px solid #c6f6d5; }
+
+.order-body {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.order-total {
+    text-align: right;
+}
+.order-total-label {
+    color: #718096;
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+.order-total-amount {
+    color: #e53e3e;
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.order-footer {
+    padding: 1rem 1.5rem;
+    background: #fdfdfd;
+    border-top: 1px dashed #edf2f7;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.empty-orders {
+    background: white;
+    border-radius: 16px;
+    padding: 5rem 2rem;
+    text-align: center;
+    border: 1px dashed #cbd5e0;
+}
+.empty-orders i {
+    font-size: 5rem;
+    color: #cbd5e0;
+    margin-bottom: 1.5rem;
+}
+.empty-orders h3 {
+    color: #2d3748;
+    margin-bottom: 0.8rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+.empty-orders p {
+    color: #718096;
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+}
 </style>
 
-<div class="mb-2">
-    <h1>📋 Đơn Hàng Của Tôi</h1>
-    <p style="color: #718096; margin-top: 0.5rem;">Theo dõi tiến trình các đơn hàng bạn đã đặt</p>
+<div class="page-header">
+    <h1><i class="fa-solid fa-boxes-packing" style="color: #667eea;"></i> Đơn Hàng Của Tôi</h1>
+    <p style="color: #718096; margin-top: 0.5rem;">Quản lý và theo dõi trạng thái các sản phẩm bạn đã đặt mua</p>
 </div>
 
 {% if orders %}
-    {% for order in orders %}
-        <div class="order-card">
-            <div class="order-header">
-                <div>
-                    <div class="order-id">Đơn hàng #{{ order.id }}</div>
-                    <div class="order-date">Đặt ngày: {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.9rem; color: #718096;">Tổng tiền</div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #667eea;">{{ "{:,.0f}".format(order.total_price) }} ₫</div>
-                </div>
-            </div>
-
-            {% set status_level = {'pending': 1, 'paid': 2, 'shipped': 3, 'delivered': 4}[order.status] %}
-            {% set progress_width = (status_level - 1) * 33.33 %}
-
-            <div class="timeline-container">
-                <div class="timeline-track"></div>
-                <div class="timeline-progress" style="width: {{ progress_width }}%;"></div>
-                <div class="timeline-steps">
-                    <div class="timeline-step {% if status_level >= 1 %}active{% endif %} {% if status_level > 1 %}completed{% endif %}">
-                        <div class="step-icon">1</div>
-                        <div class="step-label">Chờ xác nhận</div>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <div>
+                        <div class="order-id">Mã đơn: #{{ order.id }}</div>
+                        <div class="order-date"><i class="fa-regular fa-clock"></i> Đặt lúc: {{ order.created_at.strftime('%d/%m/%Y - %H:%M') }}</div>
                     </div>
-                    <div class="timeline-step {% if status_level >= 2 %}active{% endif %} {% if status_level > 2 %}completed{% endif %}">
-                        <div class="step-icon">2</div>
-                        <div class="step-label">Đã xác nhận</div>
-                    </div>
-                    <div class="timeline-step {% if status_level >= 3 %}active{% endif %} {% if status_level > 3 %}completed{% endif %}">
-                        <div class="step-icon">3</div>
-                        <div class="step-label">Đang giao</div>
-                    </div>
-                    <div class="timeline-step {% if status_level == 4 %}active{% endif %}">
-                        <div class="step-icon">✓</div>
-                        <div class="step-label">Thành công</div>
+                    <div>
+                        {% if order.status == 'pending' %}
+                            <span class="order-status status-pending"><i class="fa-solid fa-hourglass-half"></i> Chờ xác nhận</span>
+                        {% elif order.status == 'paid' %}
+                            <span class="order-status status-paid"><i class="fa-solid fa-money-check-dollar"></i> Đã thanh toán</span>
+                        {% elif order.status == 'shipped' %}
+                            <span class="order-status status-shipped"><i class="fa-solid fa-truck-fast"></i> Đang giao hàng</span>
+                        {% elif order.status == 'delivered' %}
+                            <span class="order-status status-delivered"><i class="fa-solid fa-box-open"></i> Đã nhận hàng</span>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
+                
+                <div class="order-body">
+                    <div class="order-info">
+                        <span style="color: #4a5568; font-weight: 600;">
+                            <i class="fa-solid fa-basket-shopping" style="color: #a0aec0; margin-right: 5px;"></i> 
+                            Số lượng sản phẩm: <span style="color: #667eea;">{{ order.items|length if order.items else 'N/A' }} loại</span>
+                        </span>
+                        <span style="color: #718096; font-size: 0.95rem;">
+                            <i class="fa-solid fa-wallet" style="color: #a0aec0; margin-right: 5px;"></i> 
+                            Phương thức: Thanh toán khi nhận hàng
+                        </span>
+                    </div>
+                    <div class="order-total">
+                        <div class="order-total-label">Thành tiền</div>
+                        <div class="order-total-amount">{{ "{:,.0f}".format(order.total_price) }} ₫</div>
+                    </div>
+                </div>
 
-            <div style="text-align: center; margin-top: 1rem;">
-                <button class="btn-secondary" onclick="alert('Chi tiết đơn hàng sẽ hiển thị ở đây!')" style="font-size: 0.9rem;">Xem chi tiết sản phẩm</button>
+                <div class="order-footer">
+                    <a href="/order-success/{{ order.id }}" class="btn-secondary" style="padding: 0.6rem 1.2rem;"><i class="fa-regular fa-eye"></i> Xem Chi Tiết</a>
+                    
+                    {% if order.status == 'delivered' %}
+                        <button class="btn-primary" style="padding: 0.6rem 1.2rem; background: #38a169; box-shadow: none;" onclick="showToast('Sản phẩm đã được thêm lại vào giỏ!', 'success')">
+                            <i class="fa-solid fa-rotate-left"></i> Mua Lại
+                        </button>
+                    {% elif order.status == 'pending' %}
+                       <button data-order-id="{{ order.id }}" class="btn-danger" style="padding: 0.6rem 1.2rem; background: #fff5f5; color: #e53e3e; border: 1px solid #fc8181;" onclick="cancelOrder(this.dataset.orderId)">
+                            <i class="fa-solid fa-xmark"></i> Hủy Đơn
+                        </button>
+                    {% endif %}
+                </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
 {% else %}
-    <div style="background: white; border-radius: 12px; padding: 4rem 2rem; text-align: center; border: 1px dashed #cbd5e0;">
-        <div style="font-size: 4rem; opacity: 0.5; margin-bottom: 1rem;">📦</div>
-        <h3 style="color: #2d3748;">Bạn chưa có đơn hàng nào</h3>
-        <a href="/" class="btn-primary mt-2">Bắt Đầu Mua Sắm Ngay</a>
+    <div class="empty-orders">
+        <i class="fa-solid fa-receipt"></i>
+        <h3>Bạn chưa có đơn hàng nào</h3>
+        <p>Có vẻ như bạn chưa thực hiện giao dịch nào. Khám phá ngay các deal HOT hôm nay!</p>
+        <a href="/" class="btn-primary" style="padding: 1rem 3rem; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(102,126,234,0.3);">
+            <i class="fa-solid fa-cart-shopping"></i> Mua Sắm Ngay
+        </a>
     </div>
 {% endif %}
+
+<script>
+// Hàm mô phỏng Hủy đơn (Kết nối với API sau)
+function cancelOrder(orderId) {
+    showConfirmDialog(
+        '⚠️ Hủy Đơn Hàng',
+        `Bạn có chắc chắn muốn hủy đơn hàng #${orderId} không? Hành động này không thể hoàn tác.`,
+        () => {
+            // Hiển thị Toast thông báo vì chưa viết API Backend
+            showToast('Tính năng Hủy đơn đang được bảo trì. Vui lòng liên hệ CSKH!', 'info');
+            
+            // Nếu bạn viết API bằng Flask, hãy bỏ comment đoạn code dưới đây:
+            /*
+            fetch(`/cancel-order/${orderId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        showToast('Đã hủy đơn hàng', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                });
+            */
+        }
+    );
+}
+</script>
 {% endblock %}
