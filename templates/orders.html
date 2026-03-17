@@ -1,47 +1,85 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>📋 Đơn Hàng Của Tôi</h1>
+<style>
+/* CSS cho Timeline Đơn Hàng */
+.order-card { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
+.order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #edf2f7; padding-bottom: 1rem; margin-bottom: 2rem; }
+.order-id { font-size: 1.2rem; font-weight: 800; color: #2d3748; }
+.order-date { color: #718096; font-size: 0.9rem; }
+
+/* Timeline Container */
+.timeline-container { position: relative; margin: 2rem 0 3rem; padding: 0 2rem; }
+.timeline-track { position: absolute; top: 15px; left: 10%; right: 10%; height: 4px; background: #edf2f7; z-index: 1; border-radius: 2px; }
+.timeline-progress { position: absolute; top: 15px; left: 10%; height: 4px; background: #667eea; z-index: 2; transition: width 0.5s ease; border-radius: 2px; }
+.timeline-steps { display: flex; justify-content: space-between; position: relative; z-index: 3; }
+
+.timeline-step { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; width: 80px; text-align: center; }
+.step-icon { width: 34px; height: 34px; background: white; border: 3px solid #edf2f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #a0aec0; transition: all 0.3s; }
+.step-label { font-size: 0.85rem; font-weight: 600; color: #a0aec0; }
+
+/* Active States */
+.timeline-step.active .step-icon { border-color: #667eea; background: #667eea; color: white; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2); }
+.timeline-step.active .step-label { color: #2d3748; }
+.timeline-step.completed .step-icon { border-color: #667eea; background: white; color: #667eea; }
+.timeline-step.completed .step-label { color: #667eea; }
+</style>
+
+<div class="mb-2">
+    <h1>📋 Đơn Hàng Của Tôi</h1>
+    <p style="color: #718096; margin-top: 0.5rem;">Theo dõi tiến trình các đơn hàng bạn đã đặt</p>
+</div>
 
 {% if orders %}
-    <table class="mt-2">
-        <thead>
-            <tr>
-                <th>Đơn Hàng</th>
-                <th>Tổng Tiền</th>
-                <th>Trạng Thái</th>
-                <th>Ngày Đặt</th>
-                <th>Hành Động</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-                <tr>
-                    <td><strong>#{{ order.id }}</strong></td>
-                    <td>{{ "{:,.0f}".format(order.total_price) }} ₫</td>
-                    <td>
-                        {% if order.status == 'pending' %}
-                            <span style="background: #fff3cd; color: #856404; padding: 0.3rem 0.8rem; border-radius: 20px;">⏳ Chờ Xác Nhận</span>
-                        {% elif order.status == 'paid' %}
-                            <span style="background: #cfe2ff; color: #084298; padding: 0.3rem 0.8rem; border-radius: 20px;">✓ Đã Thanh Toán</span>
-                        {% elif order.status == 'shipped' %}
-                            <span style="background: #d1ecf1; color: #0c5460; padding: 0.3rem 0.8rem; border-radius: 20px;">📦 Đang Gửi</span>
-                        {% elif order.status == 'delivered' %}
-                            <span style="background: #d4edda; color: #155724; padding: 0.3rem 0.8rem; border-radius: 20px;">✓ Đã Giao</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td>
-                        <a href="/order-success/{{ order.id }}" class="btn-secondary">Chi Tiết</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <div class="order-id">Đơn hàng #{{ order.id }}</div>
+                    <div class="order-date">Đặt ngày: {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; color: #718096;">Tổng tiền</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #667eea;">{{ "{:,.0f}".format(order.total_price) }} ₫</div>
+                </div>
+            </div>
+
+            {% set status_level = {'pending': 1, 'paid': 2, 'shipped': 3, 'delivered': 4}[order.status] %}
+            {% set progress_width = (status_level - 1) * 33.33 %}
+
+            <div class="timeline-container">
+                <div class="timeline-track"></div>
+                <div class="timeline-progress" style="width: {{ progress_width }}%;"></div>
+                <div class="timeline-steps">
+                    <div class="timeline-step {% if status_level >= 1 %}active{% endif %} {% if status_level > 1 %}completed{% endif %}">
+                        <div class="step-icon">1</div>
+                        <div class="step-label">Chờ xác nhận</div>
+                    </div>
+                    <div class="timeline-step {% if status_level >= 2 %}active{% endif %} {% if status_level > 2 %}completed{% endif %}">
+                        <div class="step-icon">2</div>
+                        <div class="step-label">Đã xác nhận</div>
+                    </div>
+                    <div class="timeline-step {% if status_level >= 3 %}active{% endif %} {% if status_level > 3 %}completed{% endif %}">
+                        <div class="step-icon">3</div>
+                        <div class="step-label">Đang giao</div>
+                    </div>
+                    <div class="timeline-step {% if status_level == 4 %}active{% endif %}">
+                        <div class="step-icon">✓</div>
+                        <div class="step-label">Thành công</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn-secondary" onclick="alert('Chi tiết đơn hàng sẽ hiển thị ở đây!')" style="font-size: 0.9rem;">Xem chi tiết sản phẩm</button>
+            </div>
+        </div>
+    {% endfor %}
 {% else %}
-    <div class="alert alert-info text-center" style="margin-top: 2rem;">
-        <h3>Chưa có đơn hàng nào</h3>
-        <p>Hãy quay lại <a href="/">trang chủ</a> để mua sắm</p>
+    <div style="background: white; border-radius: 12px; padding: 4rem 2rem; text-align: center; border: 1px dashed #cbd5e0;">
+        <div style="font-size: 4rem; opacity: 0.5; margin-bottom: 1rem;">📦</div>
+        <h3 style="color: #2d3748;">Bạn chưa có đơn hàng nào</h3>
+        <a href="/" class="btn-primary mt-2">Bắt Đầu Mua Sắm Ngay</a>
     </div>
 {% endif %}
 {% endblock %}
