@@ -73,12 +73,11 @@ class CartItem(db.Model):
 # ==================== UTILS (KHỞI TẠO DB) ====================
 
 def init_db():
-    """Khởi tạo cơ sở dữ liệu và thêm tài khoản admin mặc định"""
+    """Khởi tạo cơ sở dữ liệu, admin và sản phẩm mẫu"""
     with app.app_context():
-        # Tạo bảng nếu chưa có (Rất quan trọng cho Postgres trên Render)
         db.create_all()
         
-        # Tạo admin nếu chưa có
+        # 1. Tạo admin nếu chưa có
         if not User.query.filter_by(username='admin').first():
             logger.info("Đang tạo tài khoản admin mặc định...")
             admin = User(
@@ -88,8 +87,25 @@ def init_db():
                 is_admin=True
             )
             db.session.add(admin)
-            db.session.commit()
             logger.info("Đã tạo Admin: admin / admin123")
+
+        # 2. Thêm sản phẩm mẫu nếu database trống
+        if Product.query.count() == 0:
+            logger.info("Đang thêm sản phẩm mẫu vào cửa hàng...")
+            sample_products = [
+                Product(name='iPhone 15 Pro', description='Chip A17 Pro mạnh mẽ, khung Titan bền bỉ.', price=28990000, quantity=50, image_url='https://vcdn-sohoa.vnecdn.net/2023/09/13/iphone-15-pro-finish-select-202309-6x-9321-1694566311.jpg'),
+                Product(name='MacBook Air M2', description='Siêu mỏng nhẹ, pin cả ngày dài.', price=26500000, quantity=30, image_url='https://vcdn-sohoa.vnecdn.net/2022/06/07/macbook-air-m2-1-8438-1654559865.jpg'),
+                Product(name='iPad Pro M2', description='Màn hình Liquid Retina siêu sắc nét.', price=21990000, quantity=25, image_url='https://vcdn-sohoa.vnecdn.net/2022/10/19/ipad-pro-m2-1-8316-1666113941.jpg'),
+                Product(name='Sony WH-1000XM5', description='Tai nghe chống ồn đỉnh cao.', price=8490000, quantity=40, image_url='https://sony.scene7.com/is/image/sonyglobalsolutions/wh-1000xm5_b_primary?fmt=png-alpha'),
+                Product(name='Samsung Galaxy S24 Ultra', description='Điện thoại AI đỉnh nhất hiện nay.', price=29990000, quantity=20, image_url='https://vcdn-sohoa.vnecdn.net/2024/01/18/galaxy-s24-ultra-1-8931-1705520846.jpg'),
+                Product(name='Apple Watch Series 9', description='Theo dõi sức khỏe và thể thao chuyên nghiệp.', price=10200000, quantity=15, image_url='https://vcdn-sohoa.vnecdn.net/2023/09/13/watch-series-9-1-5847-1694565755.jpg'),
+                Product(name='Logitech MX Master 3S', description='Chuột công thái học cho dân văn phòng.', price=2450000, quantity=100, image_url='https://resource.logitech.com/w_692,c_lpad,ar_4:3,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/mice/mx-master-3s/gallery/mx-master-3s-mouse-top-view-graphite.png?v=1'),
+                Product(name='Keychron K2 V2', description='Bàn phím cơ không dây nhỏ gọn.', price=1850000, quantity=60, image_url='https://product.hstatic.net/1000300271/product/k2_a_1_621b4a03780544f895c0c978b7e289c0.jpg')
+            ]
+            db.session.bulk_save_objects(sample_products)
+            logger.info("Đã thêm 8 sản phẩm mẫu thành công!")
+        
+        db.session.commit()
 
 # GỌI NGAY TẠI ĐÂY: Để Gunicorn chạy hàm này khi khởi động app
 init_db()
