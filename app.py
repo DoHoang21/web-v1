@@ -70,9 +70,29 @@ class CartItem(db.Model):
     quantity = db.Column(db.Integer, default=1)
     product = db.relationship('Product', backref='cart_items')
 
-# Đảm bảo tạo database khi chạy Docker
-with app.app_context():
-    db.create_all()
+# ==================== UTILS (KHỞI TẠO DB) ====================
+
+def init_db():
+    """Khởi tạo cơ sở dữ liệu và thêm tài khoản admin mặc định"""
+    with app.app_context():
+        # Tạo bảng nếu chưa có (Rất quan trọng cho Postgres trên Render)
+        db.create_all()
+        
+        # Tạo admin nếu chưa có
+        if not User.query.filter_by(username='admin').first():
+            logger.info("Đang tạo tài khoản admin mặc định...")
+            admin = User(
+                username='admin',
+                email='admin@shop.com',
+                password=generate_password_hash('admin123'),
+                is_admin=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            logger.info("Đã tạo Admin: admin / admin123")
+
+# GỌI NGAY TẠI ĐÂY: Để Gunicorn chạy hàm này khi khởi động app
+init_db()
 
 # ==================== ROUTES ====================
 
@@ -235,7 +255,7 @@ def checkout():
     
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     return render_template('checkout.html', cart_items=cart_items, total_price=total_price, 
-                         user=user, title='Thanh Toán')
+                           user=user, title='Thanh Toán')
 
 
 @app.route('/order-success/<int:order_id>')
@@ -272,12 +292,11 @@ def admin():
     users = User.query.all()
     
     return render_template('admin.html', products=products, orders=orders, 
-                         users=users, title='Trang Quản Trị')
+                           users=users, title='Trang Quản Trị')
 
 
 @app.route('/admin/product/<int:product_id>', methods=['GET'])
 def admin_get_product(product_id):
-    """API endpoint để lấy dữ liệu sản phẩm"""
     is_admin = session.get('is_admin', False)
     if not is_admin:
         return jsonify({'success': False, 'message': 'Không có quyền'}), 403
@@ -297,7 +316,6 @@ def admin_get_product(product_id):
         return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 
-# ĐÃ SỬA: Thay vì return jsonify, hàm này dùng flash và redirect
 @app.route('/admin/add-product', methods=['POST'])
 def admin_add_product():
     is_admin = session.get('is_admin', False)
@@ -305,14 +323,12 @@ def admin_add_product():
         flash('Không có quyền truy cập', 'error')
         return redirect(url_for('login'))
     
-    # Lấy dữ liệu từ form
     name = request.form.get('name', '').strip()
     description = request.form.get('description', '').strip()
     price_str = request.form.get('price', '').strip()
     quantity_str = request.form.get('quantity', '').strip()
     image_url = request.form.get('image_url', '').strip()
     
-    # Validate required fields
     if not name or not price_str or not quantity_str:
         flash('Vui lòng điền đầy đủ Tên, Giá và Số lượng', 'error')
         return redirect(url_for('admin'))
@@ -334,9 +350,8 @@ def admin_add_product():
         )
         db.session.add(product)
         db.session.commit()
-        logger.info(f"Admin added product: {product.name} (id={product.id})")
+        logger.info(f"Admin added product: {product.name}")
         
-        # Sửa ở đây: Trả về trang admin kèm thông báo thành công
         flash('Thêm sản phẩm thành công!', 'success')
         return redirect(url_for('admin'))
         
@@ -345,7 +360,6 @@ def admin_add_product():
         return redirect(url_for('admin'))
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error adding product: {str(e)}")
         flash(f'Có lỗi xảy ra: {str(e)}', 'error')
         return redirect(url_for('admin'))
 
@@ -358,62 +372,26 @@ def admin_update_product(product_id):
     
     try:
         product = Product.query.get_or_404(product_id)
-        
-        # Lấy dữ liệu từ form
         name = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
         price_str = request.form.get('price', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
-        image_url = request.form.get('image_url', '').strip()
         
-        # Validation
-        errors = []
+        if not name or not price_str or not quantity_str:
+            return jsonify({'success': False, 'message': 'Thông tin không hợp lệ'}), 400
         
-        if not name:
-            errors.append('Tên sản phẩm không được để trống')
-        
-        if not price_str:
-            errors.append('Giá không được để trống')
-        else:
-            try:
-                price = float(price_str)
-                if price < 0:
-                    errors.append('Giá không được âm')
-            except ValueError:
-                errors.append('Giá phải là số hợp lệ')
-        
-        if not quantity_str:
-            errors.append('Số lượng không được để trống')
-        else:
-            try:
-                quantity = int(quantity_str)
-                if quantity < 0:
-                    errors.append('Số lượng không được âm')
-            except ValueError:
-                errors.append('Số lượng phải là số nguyên')
-        
-        if errors:
-            return jsonify({'success': False, 'message': ', '.join(errors)}), 400
-        
-        # Cập nhật sản phẩm
         product.name = name
-        product.description = description
+        product.description = request.form.get('description', '').strip()
         product.price = float(price_str)
         product.quantity = int(quantity_str)
-        product.image_url = image_url if image_url else product.image_url
+        product.image_url = request.form.get('image_url', '').strip() or product.image_url
         
         db.session.commit()
-        logger.info(f"Admin updated product: {product.name} (id={product.id})")
-        
-        return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
-        
+        return jsonify({'success': True, 'message': 'Cập nhật thành công'})
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error updating product: {str(e)}")
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
-# Giữ nguyên return jsonify vì Javascript fetch của bạn đang chờ chuỗi JSON
 @app.route('/admin/delete-product/<int:product_id>', methods=['POST'])
 def admin_delete_product(product_id):
     is_admin = session.get('is_admin', False)
@@ -422,27 +400,16 @@ def admin_delete_product(product_id):
     
     try:
         product = Product.query.get_or_404(product_id)
-        
-        # Kiểm tra xem sản phẩm này có trong đơn hàng nào không
-        order_items = OrderItem.query.filter_by(product_id=product_id).count()
-        
-        if order_items > 0:
-            return jsonify({
-                'success': False, 
-                'message': f'Không thể xóa sản phẩm này vì nó đã được đặt mua {order_items} lần. Vui lòng đặt số lượng bằng 0 để ẩn sản phẩm.'
-            }), 400
-        
-        product_name = product.name
+        # Chặn xóa nếu có đơn hàng
+        if OrderItem.query.filter_by(product_id=product_id).first():
+             return jsonify({'success': False, 'message': 'Sản phẩm đã có đơn hàng, không thể xóa'}), 400
+             
         db.session.delete(product)
         db.session.commit()
-        
-        logger.info(f"Admin deleted product: {product_name} (id={product_id})")
-        return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
-    
+        return jsonify({'success': True, 'message': 'Xóa thành công'})
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error deleting product: {str(e)}")
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/admin/adjust-inventory', methods=['POST'])
@@ -452,51 +419,24 @@ def admin_adjust_inventory():
         return jsonify({'success': False, 'message': 'Không có quyền'}), 403
     
     try:
-        product_id = request.form.get('product_id', '')
-        adjustment_type = request.form.get('type', '').strip()
-        quantity_str = request.form.get('quantity', '').strip()
-        
-        # Validation
-        if not product_id or not adjustment_type or not quantity_str:
-            return jsonify({'success': False, 'message': 'Vui lòng điền đầy đủ thông tin'}), 400
-        
-        if adjustment_type not in ['in', 'out']:
-            return jsonify({'success': False, 'message': 'Loại điều chỉnh không hợp lệ'}), 400
-        
-        try:
-            quantity = int(quantity_str)
-            if quantity <= 0:
-                return jsonify({'success': False, 'message': 'Số lượng phải lớn hơn 0'}), 400
-        except ValueError:
-            return jsonify({'success': False, 'message': 'Số lượng phải là số nguyên'}), 400
+        product_id = request.form.get('product_id')
+        adj_type = request.form.get('type')
+        qty = int(request.form.get('quantity', 0))
         
         product = Product.query.get_or_404(product_id)
-        old_quantity = product.quantity
-        
-        if adjustment_type == 'in':
-            product.quantity += quantity
-            action = 'Nhập'
-        else:  # out
-            if product.quantity < quantity:
-                return jsonify({'success': False, 'message': 'Tồn kho không đủ để xuất'}), 400
-            product.quantity -= quantity
-            action = 'Xuất'
-        
+        if adj_type == 'in':
+            product.quantity += qty
+        else:
+            if product.quantity < qty:
+                return jsonify({'success': False, 'message': 'Tồn kho không đủ'}), 400
+            product.quantity -= qty
+            
         db.session.commit()
-        logger.info(f"Admin adjusted inventory: {product.name} - {action} {quantity} (từ {old_quantity} sang {product.quantity})")
-        
-        return jsonify({
-            'success': True, 
-            'message': f'{action} {quantity} đơn vị {product.name} thành công (từ {old_quantity} sang {product.quantity})'
-        })
-    
+        return jsonify({'success': True, 'message': 'Điều chỉnh kho thành công'})
     except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error adjusting inventory: {str(e)}")
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
-# Giữ nguyên return jsonify vì Javascript fetch của bạn đang chờ chuỗi JSON
 @app.route('/admin/update-order-status/<int:order_id>', methods=['POST'])
 def admin_update_order_status(order_id):
     is_admin = session.get('is_admin', False)
@@ -505,33 +445,11 @@ def admin_update_order_status(order_id):
     
     try:
         order = Order.query.get_or_404(order_id)
-        status = request.form.get('status', '').strip()
-        
-        # Validate status
-        valid_statuses = ['pending', 'paid', 'shipped', 'delivered']
-        if status not in valid_statuses:
-            return jsonify({
-                'success': False, 
-                'message': f'Trạng thái không hợp lệ. Các trạng thái hợp lệ: {", ".join(valid_statuses)}'
-            }), 400
-        
-        if order.status == status:
-            return jsonify({
-                'success': True,
-                'message': 'Trạng thái đơn hàng không thay đổi (giống trạng thái cũ)'
-            })
-        
-        old_status = order.status
-        order.status = status
+        order.status = request.form.get('status')
         db.session.commit()
-        
-        logger.info(f"Admin updated order #{order_id} status from '{old_status}' to '{status}'")
-        return jsonify({'success': True, 'message': f'Cập nhật trạng thái thành công: {old_status} → {status}'})
-    
+        return jsonify({'success': True, 'message': 'Cập nhật trạng thái thành công'})
     except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error updating order status: {str(e)}")
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/admin/order/<int:order_id>', methods=['GET'])
@@ -542,66 +460,28 @@ def admin_view_order(order_id):
     
     try:
         order = Order.query.get_or_404(order_id)
-        
-        items = []
-        for order_item in order.items:
-            items.append({
-                'product_name': order_item.product.name,
-                'quantity': order_item.quantity,
-                'price': order_item.price
-            })
-        
-        return jsonify({
-            'success': True,
-            'total': "{:,.0f}".format(order.total_price),
-            'items': items
-        })
+        items = [{'product_name': i.product.name, 'quantity': i.quantity, 'price': i.price} for i in order.items]
+        return jsonify({'success': True, 'total': "{:,.0f}".format(order.total_price), 'items': items})
     except Exception as e:
-        logger.error(f"Error viewing order: {str(e)}")
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {str(e)}'}), 500
-
-
-# ==================== UTILS ====================
-
-def init_db():
-    """Khởi tạo cơ sở dữ liệu và thêm dữ liệu mẫu"""
-    with app.app_context():
-        db.create_all()
-        
-        # Tạo admin nếu chưa có
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@shop.com',
-                password=generate_password_hash('admin123'),
-                is_admin=True
-            )
-            db.session.add(admin)
-        db.session.commit()
-
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
 def page_not_found(e):
-    logger.warning(f"404 Not Found: {request.path}")
     return render_template('404.html'), 404
-
 
 @app.errorhandler(500)
 def internal_error(e):
-    logger.error(f"500 Internal Error: {str(e)}")
     db.session.rollback()
     return render_template('500.html'), 500
 
-
 @app.before_request
 def before_request():
-    logger.info(f"Request: {request.method} {request.path}")
-
+    pass # Bỏ bớt log thừa để tăng tốc độ
 
 if __name__ == '__main__':
+    # Vẫn giữ ở đây để khi bạn chạy python app.py ở local nó vẫn chạy
     init_db()
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
-    app.run(debug=debug, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=port)
